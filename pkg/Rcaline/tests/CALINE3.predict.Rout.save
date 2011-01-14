@@ -1,0 +1,51 @@
+
+R version 2.11.1 (2010-05-31)
+Copyright (C) 2010 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(Rcaline)
+> data(CALINE3.examples)
+> lapply(
++ 	list(ExampleOne, ExampleTwo, ExampleThree, ExampleFour), 
++ 	function(envir)	{
++ 		with(envir, CALINE3.predict(
++ 			receptors, links, meteorology,
++ 			averaging.time,	surface.roughness,
++ 			settling.velocity, deposition.velocity,
++ 			background.concentration)
++ 		)
++ 	}
++ )
+[[1]]
+RECP. 1 
+7.59468 
+
+[[2]]
+  RECP. 1   RECP. 2   RECP. 3   RECP. 4 
+ 6.135677 10.720517  4.415235  8.353938 
+
+[[3]]
+ RECP. 1  RECP. 2  RECP. 3 
+13.04153 13.06830 13.55530 
+
+[[4]]
+ RECP. 1  RECP. 2  RECP. 3  RECP. 4  RECP. 5  RECP. 6  RECP. 7  RECP. 8 
+25.92522 28.44247 15.33950 32.89312 23.47221 24.39137 26.55188 28.79481 
+ RECP. 9 RECP. 10 RECP. 11 RECP. 12 
+28.45950 28.67272 26.27955 25.62733 
+
+> 

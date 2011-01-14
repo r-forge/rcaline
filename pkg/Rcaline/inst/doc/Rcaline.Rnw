@@ -1,0 +1,184 @@
+% \VignetteIndexEntry{Rcaline: Modeling traffic-related pollution with R and the CALINE3 dispersion model} 
+% \VignetteDepends{Rcaline, sp, rgdal, spatstat, maptools}
+% \VignetteKeyword{CALINE}
+% \VignetteKeyword{CALINE3}
+
+\documentclass[a4paper]{article}
+
+\title{Rcaline: Modeling traffic-related pollution with R and the CALINE3 dispersion model}
+\author{David Holstius}
+\bibliographystyle{plain}
+
+\begin{document}
+
+<<echo=false>>=
+options(width=60)
+options(continue=" ")
+options(SweaveHooks=list(fig=function() par(mar=c(5.1, 4.1, 1.1, 2.1))))
+@
+
+\maketitle
+
+\newcommand{\Rvar}[1]{\texttt{#1} }
+\newcommand{\Rfunc}[1]{\texttt{#1} }
+\newcommand{\Rpkg}[1]{\texttt{#1} }
+\newcommand{\Rcaline}[0]{\Rpkg{Rcaline}}
+
+<<label=load_workspace,echo=FALSE>>=
+cache.fn <- 'predicted.RData'
+if(file.exists(cache.fn))
+	load(cache.fn)
+@
+
+<<echo=FALSE>>= 
+options(
+	width=60, 
+	continue=" ", 
+	SweaveHooks=list(fig=function() par(mar=c(5.1, 4.1, 1.1, 2.1)))
+	)
+@
+
+\SweaveOpts{width=6,height=4}
+
+\section{Introduction}
+
+Rcaline provides an interface to Fortran implementations of the CALINE family of line-source atmospheric dispersion models \cite{benson1979caline3,benson1992review}. These steady-state, Gaussian dispersion models are used to predict aerosol concentrations downwind from mobile emission source(s) such as highway traffic.
+
+\subsection{Features}
+
+This release of \Rcaline provides an interface to a Fortran implementation, based on the original CALTRANS implementation, of the CALINE3 model. se. 
+
+Given the same inputs, Rcaline been tested to produce identical outputs. However, \Rcaline removes significant limitations found in previous implementations of CALINE. For example, \Rcaline can be used to model an arbitrary number of roadway links and an arbitrary number of receptors\footnote{arbitray in the sense that these are bound only by available memory and CPU time}.
+
+Because it is an R package, Rcaline also makes it much easier to work with contemporary data sources, such as ESRI shapefiles. You can use the included features of the R environment, or other third-party R packages, to visualize and export model results. The R environment also provides useful scripting capabilities for automating model runs. Some of these niceties are illustrated in the remainder of this document.
+
+\subsection{Limitations}
+
+The CALINE3 model is most appropriately used for modeling dispersion of carbon monoxide (CO) attributable to free-flow traffic with wind speeds greater than 1.0 m/s. \footnote{The improved CALINE4 model includes adjustments for atmospheric chemistry that enable the modeling of nitrogen oxides (NOx). Support for the CALINE4 model is planned for a future release of Rcaline.} As with any model, care should be exercised to ensure that the practical application is theoretically well founded. For more on the theoretical scope and limitations of the CALINE model family, including terrain and other considerations, see \cite{benson1992review}. 
+
+\section{A Brief Example}
+
+In this section, we illustrate the use of \Rpkg{Rcaline} by applying it to actual highway data sourced from the OpenStreetMaps project \cite{haklay2008openstreetmap} (Figure~\ref{fig:highways}). 
+
+\subsection{Importing roadway geometry}
+
+Because the CALINE3 model expects coordinates to be in a Cartesian reference frame, we need to reproject this data using \Rfunc{spTransform}. If your data are in geodetic coordinates (long-lat or lat-long), you'll need to reproject it too. 
+
+<<label=read_highways>>=
+library(rgdal)
+WestOakland <- system.file('extdata', 'WestOakland', package='Rcaline')
+highways <- spTransform(readOGR(WestOakland, layer='highways'), CRS("+proj=utm +zone=10"))
+@
+
+<<label=define_receptors,include=FALSE,echo=FALSE>>=
+locations <- sample.Spatial(highways, n=400, type='regular')
+receptors <- as.data.frame(locations)
+names(receptors) <- c('x', 'y')
+@
+
+\begin{figure}[htb]
+\begin{center}
+<<label=plot_highways,fig=TRUE,echo=FALSE>>=
+plot(receptors)
+lines(highways)
+@
+\caption{Example roadway geometry and receptor grid.}
+\label{fig:highways}
+\end{center}
+\end{figure}
+
+For this example, we're using \Rfunc{sp::sample.Spatial} to establish a grid of locations for which we want to predict traffic-attributable emissions. Receptor locations need not be regularly spaced. You might have a CSV file or other source of geographic locations if you are interested in estimating population-based exposures. If you do, make sure it is in the same (projected) coordinates as your roadway geometry. See the documentation for \Rfunc{caline3::receptor\_totals} for more.
+
+\subsection{Decomposing roadway geometry into segments}
+
+In preparation for a CALINE model run, we need to break the roadway geometry up into individual segments. Polyline segmentation can be accomplished by the use of the \Rfunc{maptools::as.psp} function. This bit of code preserves the mapping between roadway segments and their parent polylines by way of the 'marks' attribute in the resulting dataframe. Segment coordinates are stored as x0, y0, x1, y1.
+
+<<label=break_up_links,results=hide>>=
+library(spatstat)
+library(maptools)
+patterns <- lapply(highways@lines, function(x) as.psp(SpatialLines(list(x))))
+links <- do.call(rbind, lapply(patterns, as.data.frame))
+@
+
+Note that we haven't simplified the geometry: no vertices have been added, and none have been taken away. \footnote{Line simplification is a problem for which no globally optimal solutions exist, but if you have a technique that is compatible with your needs, go ahead and apply it here. It will speed up subsequent modeling computations.}
+
+\subsection{Traffic emissions and other attributes}
+
+We can use the \Rvar{marks} attribute to assign to each segment the attributes associated with the polyline feature from which the segment was derived. This allows us to retain attributes like traffic volume, link elevation, number of lanes, or other data that might have been present in the shapefile. 
+
+<<label=merge_links>>=
+links <- merge(links, highways, by.x='marks', by.y='row.names')
+summary(links)
+@
+
+In this example, we're provided with an estimate of traffic volume: AADT (Annual Average Daily Traffic). However, we'll need to impute or assume default values for a few other variables.
+
+<<label=impute_link_attributes>>=
+links[is.na(links$LANES),'LANES'] <- median(links$LANES, na.rm=TRUE)
+links <- transform(links,
+	flow = AADT / 24.0,		# convert daily to hourly traffic volume
+	emissions = 30.0,		# assume 30 grams CO per vehicle per mile
+	width = LANES * 10.0,		# assume 10 meters per lane
+	classification = 'AG',		# assume all links at grade (vs fill or bridge)
+	height = 0.0			# assume all links at ground level
+)
+summary(links)
+@
+
+We could use more sophisticated methods, of course. This example merely serves to illustrate the required inputs.
+
+\section{Meteorology}
+
+CALINE3 requires four variables corresponding to the prevailing meteorology:
+\begin{itemize}
+\item wind bearing;
+\item wind speed;
+\item Pasquill stability class; and
+\item mixing height.
+\end{itemize}
+
+Hourly values for these are sometimes available in the form of an "ISC-ready" input file, often with a .MET file extension. For this example, we'll just assume some reasonable values for a single hour. If you are interested in computing annual averages, 8-hour maximum concentrations, etc., it's quite easy to use the scripting capabilities of R to process many different scenarios and summarize the results.
+
+<<>>=
+meteorology <- list(
+	wind.bearing = 330.0,
+	wind.speed = 1.5,
+	stability.class = 4,
+	mixing.height = 1000.0
+)
+@
+
+\section{Running the model}
+
+Now that the roadway geometry, emissions, receptor locations, and prevailing meteorology have been established, we can run the model.
+
+\subsection{Model parameters}
+
+CALINE3 also requires several "job parameters", including:
+\begin{itemize}
+\item averaging time;
+\item surface roughness;
+\item pollutant settling velocity; and
+\item pollutant deposition velocity.
+\end{itemize}
+
+We'll use some common values for averaging time (60 min) and surface roughness (100 cm). When modeling carbon monoxide, it's conventional to specify the settling velocity and deposition velocity as 0.0 m/s. For more on these parameters, including reasonable ranges and representative values, see \cite{benson1979caline3,benson1992review} or the documentation for \Rfunc{receptor\_totals}.
+
+\subsection{Computing receptor totals}
+
+The following code computes the predicted aerosol concentration, given the prevailing conditions and the parameters we've chosen.
+
+<<label=receptor_totals>>=
+library(Rcaline)
+predicted <- CALINE3.predict(receptors, links, meteorology,
+	averaging.time = 60.0, surface.roughness = 100.0)
+head(predicted)
+@
+
+<<label=save_workspace,echo=FALSE>>=
+save.image(file='predicted.RData')
+@
+
+\bibliography{Rcaline}
+
+\end{document}

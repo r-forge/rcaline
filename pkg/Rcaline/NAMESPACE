@@ -1,0 +1,2 @@
+export(read.ISC)
+export(CALINE3.predict)

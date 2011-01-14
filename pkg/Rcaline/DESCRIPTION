@@ -1,0 +1,14 @@
+Package: Rcaline
+Type: Package
+Title: Rcaline - Gaussian dispersion modeling tools based on CALINE
+Version: 0.8
+Date: 2011-01-11
+Author: David Holstius
+Maintainer: David Holstius <david.holstius@berkeley.edu>
+Depends: 
+Suggests: sp, rgdal, spatstat, maptools
+Description: Predicts steady-state aerosol concentrations downwind from mobile emission sources (e.g., highway traffic) represented as segments. Uses the CALINE3 Gaussian dispersion model.
+License: BSD
+Copyright: Copyright (c) 2010 The Regents of the University of California
+LazyLoad: yes
+References: Benson, P. (1979) CALINE-3: A versatile dispersion model for predicting air pollution levels near highways and urban streets. Federal Highway Authority report FHWA/CA/TL-79/23, California DOT, Sacramento (1979).
