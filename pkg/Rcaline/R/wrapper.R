@@ -13,11 +13,6 @@ CALINE3.predict <- function(
 	background.concentration = 0.0
 ) {	
 
-	if(is.null(receptors$z)) {
-		receptors$z <- 1.8
-		warning("Receptor heights not specified. Assuming 1.8 m above ground level (average human height).")
-	}
-
 	if(is.null(links$classification)) {
 		links$classification <- 'AG'
 		warning('Link classifications unspecified. Assuming AG ("at grade").')
@@ -53,9 +48,21 @@ CALINE3.predict <- function(
 		warning('Surface roughness unspecified. Assuming 100 cm.')
 	}
 	
-	XR 		<- as.single(receptors$x) 
-	YR 		<- as.single(receptors$y) 
-	ZR 		<- as.single(receptors$z) 
+	if(hasMethod('coordinates', class(receptors))) {
+		coords <- coordinates(receptors)
+	} else {
+		coords <- receptors[,c('x','y','z')]
+	}
+	
+	XR <- as.single(coords[,1]) 
+	YR <- as.single(coords[,2]) 
+	if(ncol(coords) > 2) {
+		ZR <- as.single(coords[,3])
+	} else {
+		ZR <- as.single(rep(1.8, length(XR)))
+		warning("Receptor heights not specified. Assuming 1.8 m above ground level (average human height).")
+	}
+
 	XL1 	<- as.single(links$x0) 
 	YL1 	<- as.single(links$y0) 
 	XL2 	<- as.single(links$x1) 
