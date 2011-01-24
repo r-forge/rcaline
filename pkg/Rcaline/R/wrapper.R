@@ -54,8 +54,8 @@ CALINE3.predict <- function(
 		coords <- receptors[,c('x','y','z')]
 	}
 	
-	XR <- as.single(coords[,1]) 
-	YR <- as.single(coords[,2]) 
+	XR <- as.single(coords[, 1]) 
+	YR <- as.single(coords[, 2]) 
 	if(ncol(coords) > 2) {
 		ZR <- as.single(coords[,3])
 	} else {
