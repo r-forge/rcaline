@@ -192,7 +192,7 @@ CALINE3 also requires several ``job parameters'', including:
 \item pollutant deposition velocity.
 \end{itemize}
 
-We'll use some common values for averaging time (60 min) and surface roughness (100 cm). When modeling carbon monoxide, it's conventional to specify the settling velocity and deposition velocity as 0.0 m/s. For more on these parameters, including reasonable ranges and representative values, see \cite{benson1979caline3,benson1992review} or the documentation for \Rfunc{receptor\_totals}.
+We'll use some common values for averaging time (60 min) and surface roughness (100 cm). When modeling carbon monoxide, it's conventional to specify the settling velocity and deposition velocity as 0.0 m/s. For more on these parameters, including reasonable ranges and representative values, see \cite{benson1979caline3,benson1992review} or the documentation for \Rfunc{CALINE3.predict}.
 
 \subsubsection{Computing receptor totals}
 
