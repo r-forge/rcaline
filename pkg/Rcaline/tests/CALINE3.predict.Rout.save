@@ -1,13 +1,12 @@
 
-R version 2.11.1 (2010-05-31)
+R version 2.12.1 (2010-12-16)
 Copyright (C) 2010 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
+Platform: x86_64-apple-darwin9.8.0/x86_64 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
-
-  Natural language support but running in an English locale
 
 R is a collaborative project with many contributors.
 Type 'contributors()' for more information and
@@ -44,7 +43,7 @@ RECP. 1
 
 [[4]]
  RECP. 1  RECP. 2  RECP. 3  RECP. 4  RECP. 5  RECP. 6  RECP. 7  RECP. 8 
-25.92522 28.44247 15.33950 32.89312 23.47221 24.39137 26.55188 28.79481 
+25.92522 28.44247 15.33950 32.93252 23.47221 24.39136 26.55188 28.79480 
  RECP. 9 RECP. 10 RECP. 11 RECP. 12 
 28.45950 28.67272 26.27955 25.62733 
 

@@ -12,48 +12,13 @@ CALINE3.predict <- function(
 	deposition.velocity = 0.0,
 	background.concentration = 0.0
 ) {	
-
-	if(is.null(links$classification)) {
-		links$classification <- 'AG'
-		warning('Link classifications unspecified. Assuming AG ("at grade").')
-	}
-	
-	if(is.null(links$height)) {
-		links$height <- 0.0
-		warning('Link heights unspecified. Assuming 0.0 m above ground level.')
-	}
-	
-	if(is.null(links$width)) {
-		links$width <- 30.0
-		warning('Link widths unspecified. Assuming 30.0 m.')
-	}
-	
-	if(is.null(meteorology$stability.class)) {
-		stability.class <- 4
-		warning('Stability class unspecified. Assuming 4 (Pasquill class "D").')
-	}
-		
-	if(is.null(meteorology$mixing.height)) {
-		mixing.height <- 1000.0
-		warning('Mixing height unspecified. Assuming 1000 m (no effect).')
-	}
-	
-	if(missing(averaging.time)) {
-		averaging.time <- 60.0
-		warning('Averaging time unspecified. Assuming 60.0 min.')
-	}
-		
-	if(missing(surface.roughness)) {
-		surface.roughness <- 100.0
-		warning('Surface roughness unspecified. Assuming 100 cm.')
-	}
-	
+			
+	# Receptor specifications
 	if(hasMethod('coordinates', class(receptors))) {
 		coords <- coordinates(receptors)
 	} else {
 		coords <- receptors[,c('x','y','z')]
 	}
-	
 	XR <- as.single(coords[, 1]) 
 	YR <- as.single(coords[, 2]) 
 	if(ncol(coords) > 2) {
@@ -63,6 +28,19 @@ CALINE3.predict <- function(
 		warning("Receptor heights not specified. Assuming 1.8 m above ground level (average human height).")
 	}
 
+	# Link specifications
+	if(is.null(links$classification)) {
+		links$classification <- 'AG'
+		warning('Link classifications unspecified. Assuming AG ("at grade").')
+	}
+	if(is.null(links$height)) {
+		links$height <- 0.0
+		warning('Link heights unspecified. Assuming 0.0 m above ground level.')
+	}
+	if(is.null(links$width)) {
+		links$width <- 30.0
+		warning('Link widths unspecified. Assuming 30.0 m.')
+	}
 	XL1 	<- as.single(links$x0) 
 	YL1 	<- as.single(links$y0) 
 	XL2 	<- as.single(links$x1) 
@@ -72,38 +50,47 @@ CALINE3.predict <- function(
 	TYP 	<- as.character(links$classification, 2)
 	VPHL 	<- as.single(links$flow) 
 	EFL 	<- as.single(links$emissions)
+	
+	# Meteorology specifications
+	if(is.null(meteorology$stability.class)) {
+		stability.class <- 4
+		warning('Stability class unspecified. Assuming 4 (Pasquill class "D").')
+	}		
+	if(is.null(meteorology$mixing.height)) {
+		mixing.height <- 1000.0
+		warning('Mixing height unspecified. Assuming 1000 m (no effect).')
+	}
 	U 		<- as.single(meteorology$wind.speed)
 	BRG 	<- as.single(meteorology$wind.bearing) 
 	CLAS 	<- as.integer(meteorology$stability.class) 
 	MIXH 	<- as.single(meteorology$mixing.height)
+
+	# Model parameters
+	if(missing(averaging.time)) {
+		averaging.time <- 60.0
+		warning('Averaging time unspecified. Assuming 60.0 min.')
+	}		
+	if(missing(surface.roughness)) {
+		surface.roughness <- 100.0
+		warning('Surface roughness unspecified. Assuming 100 cm.')
+	}
 	ATIM 	<- as.single(averaging.time)
 	Z0 		<- as.single(surface.roughness)
 	VS 		<- as.single(settling.velocity)
 	VD 		<- as.single(deposition.velocity)
 
-	f <- function(X, Y, Z) {
-		
-		predicted <- .caline3.array(
-			as.single(X), as.single(Y), as.single(Z),
-			XL1, YL1, XL2, YL2, WL, HL, TYP, VPHL, EFL,
-			U, BRG, CLAS, MIXH,
-			ATIM, Z0, VS, VD)
-	
-		# Average over meteorological conditions (if more than 1)
-		link_contributions <- apply(predicted, c(2,3), mean)
-		
-		return(sum(link_contributions))
-	}
-	
-	vf <- Vectorize(f) 
-	receptor_totals <- vf(XR, YR, ZR)
+	predicted <- .caline3.receptor_totals(
+		XR, YR, ZR,
+		XL1, YL1, XL2, YL2, WL, HL, TYP, VPHL, EFL,
+		U, BRG, CLAS, MIXH,
+		ATIM, Z0, VS, VD)
 
 	# Use row names, if provided, to label results
 	if(!is.null(row.names(receptors))) {
-		names(receptor_totals) <- row.names(receptors)
+		names(predicted) <- row.names(receptors)
 	}
 
-	return(receptor_totals + background.concentration)
+	return(predicted + background.concentration)
 	
 }
 
@@ -111,80 +98,81 @@ CALINE3.predict <- function(
 # Native code (Fortran) wrapper function
 #
 
-.caline3.array <- function(
+.caline3.receptor_totals <- function(
 	XR, YR, ZR,
 	XL1, YL1, XL2, YL2, WL, HL, TYP, VPHL, EFL,
 	U, BRG, CLAS, MIXH,
 	ATIM, Z0, VS = 0.0, VD = 0.0, MAXDIST = 1e5
 ) {	
 
-	# TODO: type checking (all values should be single-precision)
-
+	# Receptor specifications
+	NR <- as.integer(length(XR))
+	stopifnot( all.equal(NR, length(YR), length(ZR)) )
 	if( any(is.na(XR)) )
-		stop("All receptor X coordinates must be specified.")
-		
+		stop("All receptor X coordinates must be specified.")		
 	if( any(is.na(YR)) )
 		stop("All receptor Y coordinates must be specified.")
-
 	if( any(is.na(ZR)) )
 		stop("All receptor Z coordinates must be specified.")
 
-	stopifnot( all.equal(length(XR), length(YR), length(ZR)) )
-	
+	# Link specifications
+	NL <- as.integer(length(XL1))
+	stopifnot( all.equal(NL, length(YL1), length(XL2), length(YL2),
+		length(WL), length(HL), length(TYP), length(VPHL), length(EFL)) )	
 	if( any(is.na(WL)) )
 		stop("All link widths must be specified.")
-	
 	if( any(is.na(HL)) )
 		stop("All link heights must be specified.")
-	
 	if( any(is.na(TYP)) )
 		stop("All link classifications must be specified.")
-
 	if( any(is.na(VPHL)) )
 		stop("All links must have a non-NULL flow (vehicles per hour).") 
-	
 	if( any(is.na(EFL)) )
 		stop('All links must have a non-NULL emission factor (grams per vehicle-mile).') 
-
-	stopifnot( all.equal(length(XL1), length(YL1), length(XL2), length(YL2),
-		length(WL), length(HL), length(TYP), length(VPHL), length(EFL)) )
 	
-	if( any(U < 1.0) )
+	# Coerce type classifications to integers 
+	# (can't pass characters to .Fortran() with DUP = FALSE )
+	if(is.character(TYP)) {
+		clas.lookup <- list(AG=0, BR=1, FL=2, DP=3, 
+			`At Grade`=0, `Bridge`=1, `Fill`=2, `Depressed`=3)
+		#print(clas.lookup)
+		#print(TYP)
+		#print(clas.lookup[TYP])
+		NTYP <- as.integer(clas.lookup[TYP])
+	} else if(is.integer(TYP)) {
+		NTYP <- TYP
+	} else {
+		stop('TYP argument must be character or integer')
+	}
+	
+	# Meteorology specifications
+	if( U < 1.0 )
 		stop("Wind speeds less than 1.0 m/s are not valid input for the CALINE3 model.") 
-	
-	if( any(BRG < 0) || any(BRG > 360) )
+	if( (BRG < 0) || (BRG > 360) )
 		stop("Wind bearing must be in [0, 360].")
-		
-	if( any(CLAS < 1) || any(CLAS > 6) )
+	if( (CLAS < 1) || (CLAS > 6) )
 		stop("Stability class must be an integer between 1 and 6 (inclusive).")
-	
-	if( any(MIXH < 0) )
+	if( MIXH < 0 )
 		stop("Mixing height cannot be negative.")
+		
+	# TODO: more rigorous type checking
+	stopifnot(lapply(list(XR, YR, ZR), is.numeric) == TRUE)
+	stopifnot(lapply(list(XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL), is.numeric) == TRUE)
+	stopifnot(lapply(list(U, BRG, CLAS, MIXH), is.numeric) == TRUE)
 	
-	stopifnot( all.equal(length(U), length(BRG), length(CLAS), length(MIXH)) )
-
-	# Allocate array to hold results
-	NR 		<- as.integer(length(XR))
-	NL 		<- as.integer(length(XL1))
-	NM 		<- as.integer(length(U))
-	C 		<- as.single(array(0.0, c(NR, NL, NM)))
-	
-	# Call native code
-	returned_data <- suppressWarnings(
-		.Fortran(
-			'CALINE3_ARRAY', 
+	# Call native code, allocating array C to hold results
+	returned_data <- .Fortran(
+			"CALINE3_RECEPTOR_TOTALS", 
 			NR, XR, YR, ZR,
-			NL, XL1, YL1, XL2, YL2, WL, HL, TYP, VPHL, EFL,
-			NM, U, BRG, CLAS, MIXH,
+			NL, XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL,
+			U, BRG, CLAS, MIXH,
 			ATIM, Z0, VS, VD, MAXDIST,
-			C = C,
-			PACKAGE = 'Rcaline'
-		)
+			C = as.single(array(0.0, NR)),
+			PACKAGE = "Rcaline"
 	)
 	
-	# Convert 1D array result back to 3D array 
+	# Return results
 	predicted <- as.numeric(returned_data$C)
-	dim(predicted) <- c(NM, NL, NR)
 	return(predicted)
 	
 }

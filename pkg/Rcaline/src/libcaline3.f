@@ -22,7 +22,7 @@ C	PARTICULAR PURPOSE. THE SOFTWARE AND ACCOMPANYING DOCUMENTATION, IF ANY,
 C	PROVIDED HEREUNDER IS PROVIDED "AS IS". REGENTS HAS NO OBLIGATION TO
 C	PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 C
-       SUBROUTINE CALINE3_ARRAY(
+       SUBROUTINE CALINE3_RECEPTOR_TOTALS(
      +                   NR,      ! number of receptors 
      +                   XR,      ! x-coordinates of receptors
      +                   YR,      ! y-coordinates of receptors
@@ -34,14 +34,13 @@ C
      +                   YL2,     ! y-coordinates of link vertices
      +                   WL,      ! link widths
      +                   HL,      ! link heights
-     +                   TYP,     ! link classifications
+     +                   NTYP,    ! link classifications *as integers*
      +                   VPHL,    ! traffic volume (per link)
      +                   EFL,     ! emission factor (per link)
-     +                   NM,      ! number of meteorological conditions
-     +                   UM,      ! wind speeds
-     +                   BRGM,    ! wind bearings
-     +                   CLASM,   ! atmospheric stability classes
-     +                   MIXHM,   ! mixing heights 
+     +                   U,       ! wind speed
+     +                   BRG,     ! wind bearing
+     +                   CLAS,    ! atmospheric stability class
+     +                   MIXH,    ! mixing height
      +                   ATIM,    ! averaging time
      +                   Z0,      ! surface roughness
      +                   VS,      ! settling velocity
@@ -61,24 +60,25 @@ C    Peak concentrations and average concentrations can be computed as
 C    margined values from the returned array.
 C
 		
-      INTEGER NR,NL,NM
-      DIMENSION C(NM,NL,NR)
+      INTEGER NR,NL
+      DIMENSION C(NR)
         
       DOUBLE PRECISION HYP,SIDE,FAC2,PD,A,B,L,D,                        
      +    XPRI,YPRI,APRI,BPRI,LPRI,DPRI,XD,YD,D1,D2,                    
      +    LL(NL),INTG(6)                                                
      
-      INTEGER CLASM(NM),CLAS
+      INTEGER CLAS
       
       REAL MOWT,NE,LIM,KZ,LB,INC,MIXH
       
       REAL V1,YE,Z,EXP1,EXP2,DVIR,CSL2
       
-      REAL*4 UM(NM),BRGM(NM),MIXHM(NM)
       REAL*4 XR(NR),YR(NR),ZR(NR)
       REAL*4 XL1(NL),YL1(NL),XL2(NL),YL2(NL),WL(NL),HL(NL)
       REAL*4 VPHL(NL),EFL(NL)
-      CHARACTER*2 TYP(NL)
+      
+      INTEGER NTYP(NL)
+      PARAMETER(NTYP_AG=0,NTYP_BR=1,NTYP_FL=2,NTYP_DP=3)
       
       REAL MAXD
       
@@ -108,27 +108,7 @@ C
       LL(I)=SQRT((XL1(I)-XL2(I))**2+(YL1(I)-YL2(I))**2)
 C     ! LINK LENGTH
  1050 CONTINUE           
-      
-C                                                                       
-C *****  MET LOOP  *****                                                
-C                                                                       
-      DO 9000 IM=1,NM                                                   
-      
-      U = UM(IM)
-      BRG = BRGM(IM)
-      CLAS = CLASM(IM)
-      MIXH = MIXHM(IM)
-      
-      IF (U.LT.1) THEN
-      
-        DO IL=1,NL
-          DO IR=I,NR
-            C(IM,IL,IR) = 0.0		! calm winds
-          END DO
-        END DO
-      
-      ELSE
-      
+            
 C        U = WIND SPEED (M/S)                                           
 C      BRG = WIND DIRECTION (DEGREES)                                   
 C     CLAS = STABILITY CLASS (A-F)                                      
@@ -174,7 +154,7 @@ C
       
       VPH=VPHL(IL)                                                      
       EF=EFL(IL)                                                        
-      IF (TYP(IL).EQ.'DP' .OR. TYP(IL).EQ.'FL') GO TO 870
+      IF (NTYP(IL).EQ.NTYP_DP .OR. NTYP(IL).EQ.NTYP_FL) GO TO 870
       H=HL(IL)                                                          
       GO TO 880                                                         
   870 H=0.                                                              
@@ -285,7 +265,7 @@ C      IF (DPRI.GT.(MAXD**2)) GOTO 6000
  5725 TEMP=UWL                                                          
       UWL=-DWL                                                          
       DWL=-TEMP                                                         
- 5735 IF (TYP(IL).EQ.'AG' .OR. TYP(IL).EQ.'BR') GO TO 5750
+ 5735 IF (NTYP(IL).EQ.NTYP_AG .OR. NTYP(IL).EQ.NTYP_BR) GO TO 5750
 C                                                                       
       D1=W2+2.*ABS(HL(IL))                                              
       D2=W2                                                             
@@ -467,7 +447,7 @@ C
  3760 INC=FACT*(FAC5-FAC3)                                              
 C     ! INCREMENTAL CONCENTRATION FROM ELEMENT                          
 C                                                                       
-      C(IM,IL,IR)=C(IM,IL,IR)+(INC*FPPM)
+      C(IR)=C(IR)+(INC*FPPM)
 C     ! SUMMATION OF CONCENTRATIONS                                     
 C                                                                       
  3770 IF (FINI.EQ.0.) THEN
@@ -491,12 +471,10 @@ C
 C *****  END LOOPS  *****                                               
 C                                                                       
  6000 CONTINUE                             
-      !PRINT *, "C is:", C                                                    
+
+C     PRINT *, "C is:", C                                                    
+
  8000 CONTINUE    
  
-      END IF	! non-calm wind block
- 
- 9000 CONTINUE
- 
-      END SUBROUTINE
+ 9000 END SUBROUTINE
  
