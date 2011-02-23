@@ -60,7 +60,7 @@ The CALINE3 model is most appropriately used for modeling dispersion of carbon m
 
 \section{Example Usage}
 
-In this section, we illustrate the use of \Rpkg{Rcaline} by applying it to highway data sourced from the OpenStreetMaps project \cite{haklay2008openstreetmap} (Figure~\ref{fig:highways}). There are three distinct steps: (1) preparing the input; (2) running the model; and (3) visualizing and/or exporting the output. Most of the work consists in preparing the input, and the reader is well advised to consult the CALINE User's Guide \cite{benson1979caline3} for additional detail.
+In this section, we illustrate the use of \Rpkg{Rcaline} by applying it to highway data sourced from the OpenStreetMaps project \cite{haklay2008openstreetmap} (Figure~\ref{fig:receptor-grid-coarse}). There are three distinct steps: (1) preparing the input; (2) running the model; and (3) visualizing and/or exporting the output. Most of the work consists in preparing the input, and the reader is well advised to consult the CALINE User's Guide \cite{benson1979caline3} for additional detail.
 
 \subsection{Preparing input}
 
@@ -69,6 +69,7 @@ In this section, we illustrate the use of \Rpkg{Rcaline} by applying it to highw
 Contemporary GIS data is often stored in the ESRI shapefile format. The \Rpkg{Rcaline} package includes an example of such a shapefile with highway data for West Oakland, California. 
 
 <<label=locate_shpfile>>=
+library(Rcaline)
 shpfile <- system.file('extdata', 'WestOakland', 'highways.shp', package='Rcaline')
 @
 
@@ -94,7 +95,7 @@ plot(receptor.grid, pch=3, col='grey')
 lines(highways)
 @
 \caption{Example highway geometry and receptor grid.}
-\label{fig:highways}
+\label{fig:receptor-grid-coarse}
 \end{center}
 \end{figure}
 
@@ -103,16 +104,14 @@ lines(highways)
 In preparation for a CALINE model run, we need to break the roadway geometry up into individual segments. This only needs to be done once; you can save the result for future use. 
 
 <<label=break_up_links,results=hide>>=
-library(spatstat)
-segments <- lapply(highways@lines, function(x) as.psp(SpatialLines(list(x))))
-segments <- do.call(rbind, lapply(segments, as.data.frame))
-link.data <- merge(segments, highways, by.x='marks', by.y='row.names')
+segments <- Rcaline:::segmentize(highways)
+link.data <- merge(segments, highways, by.x = "marks", by.y = "row.names")
 @
 
 In this example, we're using the \Rfunc{as.psp} function from the \Rpkg{spatstat} package. The code above re-assigns to each segment the attributes associated with its parent polyline feature. If that's a bit confusing, don't worry. It allows us to retain attributes like traffic volume, link elevation, number of lanes, or other data that might have been present in the shapefile.
 
 <<label=summarize_link_data,echo=FALSE>>=
-summary(link.data)
+#summary(link.data)
 @
 
 \subsubsection{Imputing missing variables}
@@ -143,7 +142,7 @@ Finally, we assign to each link an estimate of the \textit{flow}, or traffic vol
 link.data <- transform(link.data, flow = AADT / 24.0, emissions = 10.0)
 @
 
-Because we are interested in hourly estimates, we divide the average daily traffic by 24. We don't have an emission factor available, so we assume uniform emissions of 10 g /veh-mi. Precise estimates for emission factors can be obtained with the use of a sophisticated model, such as EMFAC \cite{emfac2007motor}, that takes into account prevailing weather conditions (temperature and humidity) as well as the composition of the local vehicle fleet. Fleet composition and emissions inventories are sometimes available on a statewide or regional basis; for example, the California Air Resources Board provides an emissions inventory at this level. \cite{carb2005estimated}
+Because we are interested in an hourly estimate, we divide the average daily traffic by 24. We don't have an emission factor available, so we assume uniform emissions of 10 g /veh-mi. Precise estimates for emission factors can be obtained with the use of a sophisticated model, such as EMFAC \cite{emfac2007motor}, that takes into account prevailing weather conditions (temperature and humidity) as well as the composition of the local vehicle fleet. Fleet composition and emissions inventories are sometimes available on a statewide or regional basis; for example, the California Air Resources Board provides an emissions inventory at this level. \cite{carb2005estimated}
 
 \subsubsection{Constructing a receptor grid}
 
@@ -199,45 +198,79 @@ We'll use some common values for averaging time (60 min) and surface roughness (
 The following code computes the predicted aerosol concentration, given the prevailing conditions and the parameters we've chosen.
 
 <<label=compute_receptor_totals>>=
-library(Rcaline)
-if(!exists('predicted')) {
-	predicted <- CALINE3.predict(receptor.grid, link.data, meteorology,
-		averaging.time = 60.0, surface.roughness = 100.0)
-}
+n.receptors <- 10000
+receptor.grid <- sample.Spatial(highways, n=n.receptors, type='regular')
+predicted <- CALINE3.predict(receptor.grid, link.data, meteorology,
+	averaging.time = 60.0, surface.roughness = 100.0)
 @
 
-<<label=save_workspace,echo=FALSE>>=
-save.image(file=cache.fn)
-@
+\subsection{Visualization}
 
-\subsection{Visualizing the output}
-
-As a quick check on the model output, it can be good to create a visualization. This most easily takes the form of a map. Since we have computed model results on a regular grid, it's fairly easy to construct such a map.
-
-<<label=construct_receptor_grid_high_resolution,echo=FALSE>>=
-receptor.grid <- sample.Spatial(highways, n=10000, type='regular')
-gridded(receptor.grid) <- TRUE
+<<label=make_spplot_elements,echo=FALSE>>=
 @
 
 \begin{figure}[htb]
 \begin{center}
 <<label=plot_heatmap,fig=TRUE,echo=FALSE>>=
-cells <- SpatialPointsDataFrame(
-	receptor.grid,
-	data.frame(predicted))
-gridded(cells) <- TRUE
-print(spplot(cells, main='Predicted concentrations'))
+print(Rcaline:::plot.scenario(receptor.grid, predicted))
 @
-\caption{Example heatmap at high resolution (10,000 receptors).}
-\label{fig:heatmap}
+\caption{Example heatmap at moderate resolution (10,000 receptors).}
+\label{fig:heatmap-medium}
 \end{center}
 \end{figure}
 
-The map above was produced with a higher-resolution receptor grid than the one in Figure 1 (10,000 receptors vs 400 receptors). This is one approach to achieving high-resolution estimates of pollutant concentrations. Another would be to interpolate a lower-resolution receptor grid, using, for example, kriging or bicubic interpolation. Many R packages and functions are available to assist in this task!
+As a quick check on the model output, it can be good to create a visualization. This most easily takes the form of a map. Since we have computed model results on a regular grid, it's fairly easy to construct such a map.
+
+The map in Figure~\ref{fig:heatmap-medium} was produced with a higher-resolution receptor grid than that depicted in Figure~\ref{fig:receptor-grid-coarse} (10,000 receptors vs 400 receptors). This is one approach to achieving higher-resolution estimates of pollutant concentrations. Another would be to interpolate a lower-resolution receptor grid, using, for example, kriging or bicubic interpolation. Many R packages and functions are available to assist in this task!
+
+\subsection{Improving performance}
+
+Running CALINE can be a computationally demanding task, but it's possible to speed up the clock time. First, you can restrict the receptor grid to areas of interest---often those close to the roadway network. Second, you can distribute your job(s) among multiple cores or even multiple machines.
+
+\subsubsection{Predicting near-roadway concentrations}
+
+To follow this example, you'll need to have enabled the GPC library by calling
+
+<<enable_gpc>>=
+spatstat.options(gpclib=TRUE)
+@
+
+Now we can use the spatstat library to compute a dilation (what geographers call a buffer) of the roadway geometry (Figure~\ref{fig:approx-buffer}):
+
+\begin{figure}[h]
+\begin{center}
+<<compute_fast_dilation,fig=TRUE>>=
+buffer.radius <- 1000
+buffer <- Rcaline:::fast.dilation(highways, buffer.radius, eps=100)
+receptor.grid <- spsample(buffer, n = n.receptors, type="regular")
+print(plot(buffer))
+@
+\caption{Approximate 1000 m buffer around roadways.}
+\label{fig:approx-buffer}
+\end{center}
+\end{figure}
+
+We could use the simpler and more precise \code{dilation(..., polygonal=TRUE)} instead of \code{Rcaline:::fast.dilation()}---but it's a bit too slow for this example. 
+
+\begin{figure}[h]
+\begin{center}
+<<label=compute_nearby_concentrations,fig=TRUE,echo=FALSE>>=
+predicted <- CALINE3.predict(receptor.grid, link.data, meteorology, 
+	averaging.time = 60, surface.roughness = 100)
+print(Rcaline:::plot.scenario(receptor.grid, predicted))
+@
+\caption{Higher-resolution map created by sampling near roadways.}
+\label{fig:heatmap-high}
+\end{center}
+\end{figure}
+
+\subsubsection{Distributed computation}
+
+[TODO]
 
 \section{Acknowledgments}
 
-The author wishes to thank Profs. Edmund Seto and Michael Jerrett of the UC Berkeley School of Public Health, Division of Environmental Health Sciences, as well as the UC Berkeley Center for Information Technology in the Interests of Society (CITRIS), for their generous support of the development of \Rpkg{Rcaline} and \Rpkg{libcaline}.
+The author thanks Profs. Edmund Seto and Michael Jerrett of the UC Berkeley School of Public Health, Division of Environmental Health Sciences, as well as the UC Berkeley Center for Information Technology in the Interests of Society (CITRIS), for their generous support of the development of \Rpkg{Rcaline} and \Rpkg{libcaline}.
 
 \bibliography{Rcaline}
 

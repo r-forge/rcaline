@@ -5,8 +5,8 @@ Version: 0.9
 Date: 2011-02-18
 Author: David Holstius
 Maintainer: David Holstius <david.holstius@berkeley.edu>
-Depends: 
-Suggests: sp, rgdal, spatstat, maptools
+Depends: sp
+Suggests: rgdal, spatstat, maptools
 Description: Predicts steady-state aerosol concentrations downwind from mobile emission sources (e.g., highway traffic). Based on the CALINE family of Gaussian dispersion models.
 License: BSD
 Copyright: Copyright (c) 2010 The Regents of the University of California
