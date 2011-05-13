@@ -2,11 +2,11 @@ Package: Rcaline
 Type: Package
 Title: Line source dispersion modeling using CALINE
 Version: 0.95
-Date: 2011-05-11
+Date: 2011-05-13
 Author: David Holstius
 Maintainer: David Holstius <david.holstius@berkeley.edu>
 Depends: sp, methods
-Suggests: maptools, rgeos, ggplot2
+Suggests: maptools, rgeos, ggplot2, intamap, colorspace
 Description: Predicts steady-state aerosol concentrations near lineal sources (for example, emissions from highway traffic). Based on the CALINE family of Gaussian dispersion models.
 License: BSD
 Copyright: Copyright (c) 2010,2011 The Regents of the University of California
