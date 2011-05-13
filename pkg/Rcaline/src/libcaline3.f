@@ -22,7 +22,7 @@ C	PARTICULAR PURPOSE. THE SOFTWARE AND ACCOMPANYING DOCUMENTATION, IF ANY,
 C	PROVIDED HEREUNDER IS PROVIDED "AS IS". REGENTS HAS NO OBLIGATION TO
 C	PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 C
-       SUBROUTINE CALINE3_RECEPTOR_TOTALS(
+       SUBROUTINE CALINE3_HOURLY_RECEPTOR_TOTALS(
      +                   NR,      ! number of receptors 
      +                   XR,      ! x-coordinates of receptors
      +                   YR,      ! y-coordinates of receptors
@@ -37,15 +37,15 @@ C
      +                   NTYP,    ! link classifications *as integers*
      +                   VPHL,    ! traffic volume (per link)
      +                   EFL,     ! emission factor (per link)
-     +                   U,       ! wind speed
-     +                   BRG,     ! wind bearing
-     +                   CLAS,    ! atmospheric stability class
-     +                   MIXH,    ! mixing height
+     +                   NM,      ! number of met conditions
+     +                   UM,      ! wind speeds
+     +                   BRGM,    ! wind bearings
+     +                   CLASM,   ! atmospheric stability classes
+     +                   MIXHM,   ! mixing heights
      +                   ATIM,    ! averaging time
      +                   Z0,      ! surface roughness
      +                   VS,      ! settling velocity
      +                   VD,      ! deposition velocity 
-     +                   MAXD,    ! maximum distance (after displacement)
      +                   C)       ! resulting concentrations (per receptor)
 C
 C    Computes incremental concentrations at a number of receptors, 
@@ -60,8 +60,8 @@ C    Peak concentrations and average concentrations can be computed as
 C    margined values from the returned array.
 C
 		
-      INTEGER NR,NL
-      DIMENSION C(NR)
+      INTEGER NR,NL,NM
+      DIMENSION C(NR,NM)
         
       DOUBLE PRECISION HYP,SIDE,FAC2,PD,A,B,L,D,                        
      +    XPRI,YPRI,APRI,BPRI,LPRI,DPRI,XD,YD,D1,D2,                    
@@ -76,11 +76,11 @@ C
       REAL*4 XR(NR),YR(NR),ZR(NR)
       REAL*4 XL1(NL),YL1(NL),XL2(NL),YL2(NL),WL(NL),HL(NL)
       REAL*4 VPHL(NL),EFL(NL)
-      
+      REAL*4 UM(NM),BRGM(NM),MIXHM(NM)
+      INTEGER CLASM(NM)
+
       INTEGER NTYP(NL)
       PARAMETER(NTYP_AG=0,NTYP_BR=1,NTYP_FL=2,NTYP_DP=3)
-      
-      REAL MAXD
       
       DIMENSION AZ(6),AY1(6),AY2(6),Y(6),WT(5)
       
@@ -104,6 +104,15 @@ C
       
       V1=VD-VS/2.
       
+C     MET LOOP BEGINS
+      DO 8500 IM=1,NM
+
+      U=UM(IM)
+      BRG=BRGM(IM)
+	  CLAS=CLASM(IM)
+	  MIXH=MIXHM(IM)
+C      PRINT *, 'U, BRG, CLAS, MIXH are: ', U,BRG,CLAS,MIXH
+      
       DO 1050 I=1,NL
       LL(I)=SQRT((XL1(I)-XL2(I))**2+(YL1(I)-YL2(I))**2)
 C     ! LINK LENGTH
@@ -114,7 +123,7 @@ C      BRG = WIND DIRECTION (DEGREES)
 C     CLAS = STABILITY CLASS (A-F)                                      
 C     MIXH = MIXING HEIGHT (M)                                          
 C      AMB = AMBIENT CONCENTRATION (PPM)                                
-C                                                                       
+C                 
       BRG1=BRG                                                          
 C     ! WIND ANGLE FOR OUTPUT                                           
 C                                                                       
@@ -258,8 +267,6 @@ C     ! DOWNWIND LENGTH
       IF (APRI.GT.LPRI**2) DPRI=DSQRT(APRI-LPRI**2)                     
       IF (APRI.LE.LPRI**2) DPRI=0.                                      
       IF (DPRI.LT.D) D=-D                                               
-      
-C      IF (DPRI.GT.(MAXD**2)) GOTO 6000
       
       IF (LPRI-L) 5725,5735,5735                                        
  5725 TEMP=UWL                                                          
@@ -447,7 +454,7 @@ C
  3760 INC=FACT*(FAC5-FAC3)                                              
 C     ! INCREMENTAL CONCENTRATION FROM ELEMENT                          
 C                                                                       
-      C(IR)=C(IR)+(INC*FPPM)
+      C(IR,IM)=C(IR,IM)+(INC*FPPM)
 C     ! SUMMATION OF CONCENTRATIONS                                     
 C                                                                       
  3770 IF (FINI.EQ.0.) THEN
@@ -475,6 +482,7 @@ C
 C     PRINT *, "C is:", C                                                    
 
  8000 CONTINUE    
- 
+
+ 8500 CONTINUE    
+      
  9000 END SUBROUTINE
- 

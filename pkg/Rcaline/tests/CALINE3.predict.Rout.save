@@ -1,12 +1,14 @@
 
-R version 2.12.1 (2010-12-16)
-Copyright (C) 2010 The R Foundation for Statistical Computing
+R version 2.12.2 (2011-02-25)
+Copyright (C) 2011 The R Foundation for Statistical Computing
 ISBN 3-900051-07-0
 Platform: x86_64-apple-darwin9.8.0/x86_64 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
 
 R is a collaborative project with many contributors.
 Type 'contributors()' for more information and
@@ -21,30 +23,48 @@ Type 'q()' to quit R.
 > lapply(
 + 	list(ExampleOne, ExampleTwo, ExampleThree, ExampleFour), 
 + 	function(envir)	{
-+ 		with(envir, CALINE3.predict(
-+ 			receptors, links, meteorology,
-+ 			averaging.time,	surface.roughness,
-+ 			settling.velocity, deposition.velocity,
-+ 			background.concentration)
++ 		with(envir, background.concentration + CALINE3.predict(receptors, links, meteorology, surface.roughness=surface.roughness)
 + 		)
 + 	}
 + )
 [[1]]
-RECP. 1 
-7.59468 
+           [,1]
+RECP. 1 7.59468
+attr(,"Csingle")
+[1] TRUE
 
 [[2]]
-  RECP. 1   RECP. 2   RECP. 3   RECP. 4 
- 6.135677 10.720517  4.415235  8.353938 
+             [,1]
+RECP. 1  6.135677
+RECP. 2 10.720517
+RECP. 3  4.415235
+RECP. 4  8.353938
+attr(,"Csingle")
+[1] TRUE
 
 [[3]]
- RECP. 1  RECP. 2  RECP. 3 
-13.04153 13.06830 13.55530 
+            [,1]
+RECP. 1 13.04153
+RECP. 2 13.06830
+RECP. 3 13.55530
+attr(,"Csingle")
+[1] TRUE
 
 [[4]]
- RECP. 1  RECP. 2  RECP. 3  RECP. 4  RECP. 5  RECP. 6  RECP. 7  RECP. 8 
-25.92522 28.44247 15.33950 32.93252 23.47221 24.39136 26.55188 28.79480 
- RECP. 9 RECP. 10 RECP. 11 RECP. 12 
-28.45950 28.67272 26.27955 25.62733 
+             [,1]
+RECP. 1  25.92522
+RECP. 2  28.44247
+RECP. 3  15.33950
+RECP. 4  32.93252
+RECP. 5  23.47221
+RECP. 6  24.39136
+RECP. 7  26.55188
+RECP. 8  28.79480
+RECP. 9  28.45950
+RECP. 10 28.67272
+RECP. 11 26.27955
+RECP. 12 25.62733
+attr(,"Csingle")
+[1] TRUE
 
 > 

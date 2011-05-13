@@ -3,11 +3,7 @@ data(CALINE3.examples)
 lapply(
 	list(ExampleOne, ExampleTwo, ExampleThree, ExampleFour), 
 	function(envir)	{
-		with(envir, CALINE3.predict(
-			receptors, links, meteorology,
-			averaging.time,	surface.roughness,
-			settling.velocity, deposition.velocity,
-			background.concentration)
+		with(envir, background.concentration + CALINE3.predict(receptors, links, meteorology, surface.roughness=surface.roughness)
 		)
 	}
 )

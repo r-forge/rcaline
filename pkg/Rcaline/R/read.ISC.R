@@ -1,7 +1,3 @@
-#
-# Functions for reading input from contemporary- and legacy-formatted sources.
-#
-
 read.ISC <- function(
 	file
 ) {
@@ -18,13 +14,22 @@ read.ISC <- function(
 			"month", 
 			"day", 
 			"hour", 
-			"wind.bearing", 
+			"flow.vector", 
 			"wind.speed", 
 			"temperature", 
 			"stability.class", 
 			"rural.mixing.height", 
 			"urban.mixing.height")
 	)
-	return(result)
+	
+	# Label the rows of the resulting data frame.
+	row.names(result$records) <- with(result$records, 
+		sprintf('%02d-%02d-%02d %02d:00', year, month, day, hour-1))
+		
+	# Rotate the flow vector by 180 degrees to obtain the wind bearing.
+	rotate <- function(angle, by) ((angle + by) + 360) %% 360
+	result$records$wind.bearing <- with(result$records, rotate(flow.vector, 180.0))
+	result$records$flow.vector <- NULL
+		return(result)
 	
 }
