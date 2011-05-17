@@ -1,6 +1,8 @@
 sweave := SWEAVE_STYLEPATH_DEFAULT="TRUE" R CMD SWEAVE
 
-all : Rcaline.pdf
+all : 
+
+vignette : Rcaline.pdf
 
 %.pdf : %.tex %.bbl
 	latex $<
