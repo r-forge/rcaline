@@ -1,0 +1,70 @@
+
+R version 2.12.2 (2011-02-25)
+Copyright (C) 2011 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-apple-darwin9.8.0/x86_64 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(Rcaline)
+> data(CALINE3.examples)
+> lapply(
++ 	list(ExampleOne, ExampleTwo, ExampleThree, ExampleFour), 
++ 	function(envir)	{
++ 		with(envir, background.concentration + CALINE3.predict(receptors, links, meteorology, surface.roughness=surface.roughness)
++ 		)
++ 	}
++ )
+[[1]]
+           [,1]
+RECP. 1 7.59468
+attr(,"Csingle")
+[1] TRUE
+
+[[2]]
+             [,1]
+RECP. 1  6.135677
+RECP. 2 10.720517
+RECP. 3  4.415235
+RECP. 4  8.353938
+attr(,"Csingle")
+[1] TRUE
+
+[[3]]
+            [,1]
+RECP. 1 13.04153
+RECP. 2 13.06830
+RECP. 3 13.55530
+attr(,"Csingle")
+[1] TRUE
+
+[[4]]
+             [,1]
+RECP. 1  25.92522
+RECP. 2  28.44247
+RECP. 3  15.33950
+RECP. 4  32.93252
+RECP. 5  23.47221
+RECP. 6  24.39136
+RECP. 7  26.55188
+RECP. 8  28.79480
+RECP. 9  28.45950
+RECP. 10 28.67272
+RECP. 11 26.27955
+RECP. 12 25.62733
+attr(,"Csingle")
+[1] TRUE
+
+> 
