@@ -1,0 +1,4 @@
+export(read.ISC)
+export(as.segments)
+export(as.SpatialLines)
+export(CALINE3.predict)
