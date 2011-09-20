@@ -8,7 +8,7 @@ Pasquill <- function(x) {
 # Factory method (from ISC-format metfile)
 ISCFile <- function(filename) {
 
-	# Make sure the input file exists
+	# Assert that the file exists
 	stopifnot(file.exists(filename))
 	
 	# Skip the header and read the records
@@ -81,11 +81,3 @@ plot.Meteorology <- function(met) {
 	p <- p + scale_x_continuous(limits=c(0,360), breaks=seq(0, 360, by=45))
 	return(p + coord_polar(theta='x'))
 }
-
-# Tests
-pas <- Pasquill(1:4)
-fn <- system.file("extdata", "WestOakland", "OaklandSTP-2000.ASC", package="Rcaline")
-isc <- ISCFile(fn)
-met <- Meteorology(isc)
-head(met$records)
-plot(met)

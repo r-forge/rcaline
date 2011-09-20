@@ -68,7 +68,3 @@ plot.FreeFlowLinks <- function(links, ...) {
 	return(map + centerlines + scale_color_gradient2(expression(bold(Q) ~~ bgroup("(", over(g, mi %.% hr), ")")), 
 		low="green", mid="yellow", high="red", midpoint=median(dat$Q)))
 }
-
-highways.shp <- system.file("extdata", "WestOakland", "highways.shp", package = "Rcaline")
-links <- FreeFlowLinks(highways.shp, vehiclesPerHour = AADT / 24, emissionFactor = 1.0)
-plot(links)
