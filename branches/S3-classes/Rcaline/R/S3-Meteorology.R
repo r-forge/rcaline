@@ -34,14 +34,16 @@ ISCFile <- function(filename) {
 
 }
 
-Meteorology <- function(x, use = c("urban", "rural")) {
-	
-	if(class(x) == "ISCFile") {
-		isc <- x
-	} else {
-		isc <- ISCFile(x)
-	}
-	
+Meteorology <- function(x) {
+	if(class(x) == "ISCFile") isc <- x
+	else isc <- ISCFile(x)
+	obj <- list(metadata = isc$metadata, records = isc$records)
+	class(obj) <- "Meteorology"
+	return(obj)
+}
+
+as.data.frame.Meteorology <- function(met, use = c("urban", "rural")) {
+
 	# For converting wind directions to wind bearings
 	rotate <- function(angle, by) ((angle + by) + 360) %% 360
 
@@ -49,7 +51,10 @@ Meteorology <- function(x, use = c("urban", "rural")) {
 	use <- match.arg(use)
 	message("Using ", use, " mixing heights")
 
-	records <- with(isc$records, data.frame( 
+	# Rotate flow vector by 180 to get wind bearing;
+	# Convert stability classes to Pasquill;
+	# Discard rural or urban mixing height (depending on user's preference)
+	transformedRecords <- with(met$records, data.frame( 
 			windSpeed = windSpeed, 
 			windBearing = rotate(flowVector, by = 180.0),
 			stabilityClass = Pasquill(stabilityClass),
@@ -60,18 +65,11 @@ Meteorology <- function(x, use = c("urban", "rural")) {
 		)
 	)
 	
-	row.names(records) <- with(isc$records,
+	# Assign POSIXlt vector to rownames
+	row.names(transformedRecords) <- with(met$records,
 		as.POSIXlt(sprintf("%02d/%02d/%02d %02d:00:00", year, month, day, hour - 1))
 	)
-
-	obj <- list(
-		metadata = isc$metadata,
-		records = records
-	)
-	
-	class(obj) <- "Meteorology"
-	return(obj)
-
+	return(transformedRecords)
 }
 
 plot.Meteorology <- function(met) {
