@@ -56,13 +56,18 @@ FreeFlowLinks <- function(
 }
 
 as.data.frame.FreeFlowLinks <- function(links) {
-      segments <- decimate(links$polylines)
+    segments <- decimate(links$polylines)
 	colnames(segments) <- c("XL1", "YL1", "XL2", "YL2")
 	transformArgs <- transformArgs <- c(list(links$polylines@data), links$attributeMapping)	
 	attrs <- do.call("transform", transformArgs)
 	dat <- suppressWarnings(merge(segments, attrs, by="row.names"))
 	colnames(dat)[colnames(dat) == "Row.names"] <- "ID"
 	return(dat)
+}
+
+as.SpatialLines.FreeFlowLinks <- function(links) {
+	spobj <- as.SpatialLines(links$polylines)
+	return(spobj)
 }
 
 plot.FreeFlowLinks <- function(links, ...) {
