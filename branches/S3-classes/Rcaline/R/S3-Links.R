@@ -24,6 +24,9 @@ FreeFlowLinks <- function(
 	x, 
 	vehiclesPerHour = stop("vehiclesPerHour must be specified"), 
 	emissionFactor = stop("emissionFactor must be specified"),
+	width = 30.0,
+	height = 0.0,
+	classification = 'AG',
 	...) 
 {
 	if(missing(vehiclesPerHour))
@@ -40,18 +43,25 @@ FreeFlowLinks <- function(
 	} else {
 		stop("I don't know what to do with a ", class(x))
 	}
-	
-	geoms <- decimate(sldf)
-	colnames(geoms) <- c("XL1", "YL1", "XL2", "YL2")
-	
+
 	args <- as.list(match.call())[-1]
 	formalArgs <- args[names(args) %in% names(formals())]
-	transformArgs <- c(list(sldf@data), formalArgs[-1])
-	attrs <- do.call("transform", transformArgs)
 	
-	dat <- suppressWarnings(merge(geoms, attrs, by="row.names"))
+	obj <- list(
+	      polylines = sldf, 
+	      attributeMapping = c(formalArgs[-1], list(width=width, height=height, classification=classification))
+	      )
+	class(obj) <- "FreeFlowLinks"
+	return(obj)
+}
+
+as.data.frame.FreeFlowLinks <- function(links) {
+      segments <- decimate(links$polylines)
+	colnames(segments) <- c("XL1", "YL1", "XL2", "YL2")
+	transformArgs <- transformArgs <- c(list(links$polylines@data), links$attributeMapping)	
+	attrs <- do.call("transform", transformArgs)
+	dat <- suppressWarnings(merge(segments, attrs, by="row.names"))
 	colnames(dat)[colnames(dat) == "Row.names"] <- "ID"
-	class(dat) <- c("FreeFlowLinks", "data.frame")
 	return(dat)
 }
 
