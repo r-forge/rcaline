@@ -5,7 +5,7 @@ Version: 0.99
 Date: 2011-09-20
 Author: David Holstius
 Maintainer: David Holstius <david.holstius@berkeley.edu>
-Depends: methods, sp, ggplot2, rgeos
+Depends: methods, sp, ggplot2, rgeos, multicore, doMC, foreach
 Suggests: maptools, rgdal, automap
 Description: Predicts steady-state aerosol concentrations near lineal sources (for example, emissions from highway traffic). Based on the CALINE family of Gaussian dispersion models.
 License: BSD

@@ -144,9 +144,13 @@ CALINE3.predict <- function(
 	XR, YR, ZR,
 	XL1, YL1, XL2, YL2, WL, HL, TYP, VPHL, EFL,
 	UM, BRGM, CLASM, MIXHM,
-	ATIM, Z0, VS = 0.0, VD = 0.0
+	ATIM, Z0, VS, VD
 ) {	
-
+	
+	#message("Entering .caline3.receptor_totals()")
+	#.call <- match.call()
+	#print(.call)
+		
 	# Receptor specifications
 	NR <- as.integer(length(XR))
 	stopifnot( all.equal(NR, length(YR), length(ZR)))
@@ -205,7 +209,13 @@ CALINE3.predict <- function(
 		length(WL), length(HL), length(NTYP), length(VPHL), length(EFL)))
 		
 	# Call native code, allocating array C to hold results
-	array.shape <- c(NR,NM)
+	array.shape <- c(NR, NM)
+	
+	# FIXME: temporary intercept
+	message("Modeling ", NR, " receptors x ", NL, " links x ", NM, " hours")
+	#message("Array shape is ", array.shape)
+	#return(list(NR, XR, YR, ZR, NL, XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL, NM, UM, BRGM, CLASM, MIXHM, ATIM, Z0, VS, VD))
+		
 	returned_data <- .Fortran(
 		"CALINE3_HOURLY_RECEPTOR_TOTALS", 
 		NR, XR, YR, ZR,

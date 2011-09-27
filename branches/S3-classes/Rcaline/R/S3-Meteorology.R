@@ -38,6 +38,9 @@ Meteorology <- function(x) {
 	if(class(x) == "ISCFile") isc <- x
 	else isc <- ISCFile(x)
 	obj <- list(metadata = isc$metadata, records = isc$records)
+	row.names(obj$records) <- with(obj$records,
+		as.POSIXlt(sprintf("%02d/%02d/%02d %02d:00:00", year, month, day, hour - 1))
+	)
 	class(obj) <- "Meteorology"
 	return(obj)
 }
@@ -64,17 +67,13 @@ as.data.frame.Meteorology <- function(met, use = c("urban", "rural")) {
 			)
 		)
 	)
-	
-	# Assign POSIXlt vector to rownames
-	row.names(transformedRecords) <- with(met$records,
-		as.POSIXlt(sprintf("%02d/%02d/%02d %02d:00:00", year, month, day, hour - 1))
-	)
+	row.names(transformedRecords) <- row.names(met$records)
 	return(transformedRecords)
 }
 
 plot.Meteorology <- function(met) {
 	require(ggplot2)
-	p <- ggplot(data=met$records)
+	p <- ggplot(data=as.data.frame(met))
 	p <- p + geom_histogram(aes(x=windBearing, y=..density..), binwidth=45/2)
 	p <- p + scale_x_continuous(limits=c(0,360), breaks=seq(0, 360, by=45))
 	return(p + coord_polar(theta='x'))

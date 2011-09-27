@@ -1,5 +1,3 @@
-is.installed <- function(pkgname) pkgname %in% .packages(TRUE)
-
 LinkType <- function(x) {
 	factor(x, 
 		levels = c("AG", "BR", "FL", "DP"), 
