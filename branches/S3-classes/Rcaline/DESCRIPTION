@@ -5,10 +5,41 @@ Version: 0.99
 Date: 2011-09-20
 Author: David Holstius
 Maintainer: David Holstius <david.holstius@berkeley.edu>
-Depends: methods, sp, ggplot2, rgeos, multicore, doMC, foreach
-Suggests: maptools, rgdal, automap
-Description: Predicts steady-state aerosol concentrations near lineal sources (for example, emissions from highway traffic). Based on the CALINE family of Gaussian dispersion models.
+Depends:
+    methods,
+    rgdal,
+    sp,
+    ggplot2,
+    rgeos,
+    multicore,
+    doMC,
+    foreach
+Suggests:
+    maptools,
+    automap
+Description: Predicts steady-state aerosol concentrations
+    near lineal sources (for example, emissions from
+    highway traffic). Based on the CALINE family of
+    Gaussian dispersion models.
 License: BSD
-Copyright: Copyright (c) 2010,2011 The Regents of the University of California
+Copyright: Copyright (c) 2010,2011 The Regents of the
+    University of California
 LazyLoad: yes
-References: Benson, P. (1979) CALINE-3: A versatile dispersion model for predicting air pollution levels near highways and urban streets. Federal Highway Authority report FHWA/CA/TL-79/23, California DOT, Sacramento (1979).
+References: Benson, P. (1979) CALINE-3: A versatile
+    dispersion model for predicting air pollution levels
+    near highways and urban streets. Federal Highway
+    Authority report FHWA/CA/TL-79/23, California DOT,
+    Sacramento (1979).
+Collate:
+    'as.segments.R'
+    'as.SpatialLines.R'
+    'CALINE3.predict.R'
+    'decimate.R'
+    'Rcaline-internal.R'
+    'Rcaline.R'
+    'read.ISC.R'
+    'S3-Caline3Model.R'
+    'S3-Links.R'
+    'S3-Meteorology.R'
+    'S3-Pollutant.R'
+    'S3-Receptors.R'
