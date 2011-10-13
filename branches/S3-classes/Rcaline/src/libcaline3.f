@@ -454,7 +454,7 @@ C
  3760 INC=FACT*(FAC5-FAC3)                                              
 C     ! INCREMENTAL CONCENTRATION FROM ELEMENT                          
 C                                                                       
-      C(IR,IM)=C(IR,IM)+(INC*FPPM)
+      C(IR,IM)=C(IR,IM)+INC
 C     ! SUMMATION OF CONCENTRATIONS                                     
 C                                                                       
  3770 IF (FINI.EQ.0.) THEN
