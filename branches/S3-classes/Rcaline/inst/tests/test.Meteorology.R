@@ -1,9 +1,9 @@
 context("S3-Meteorology")
 
-oakland.asc <- system.file("extdata", "WestOakland", "OaklandSTP-2000.ASC", package="Rcaline")
+SF.isc <- system.file("extdata", "BayArea", "Meteorology", "met_5801.isc", package="Rcaline")
 
-test_that("West Oakland meteorology", {
-	expect_true(file.exists(oakland.asc))
+test_that("San Francisco meteorology", {
+	expect_true(file.exists(SF.isc))
 })
 
 test_that("Pasquill() constructor", {
@@ -17,6 +17,7 @@ test_that("Pasquill() constructor", {
 #})
 
 test_that("Meteorology() constructor", {
-	met <- Meteorology(oakland.asc)
-	expect_that(nrow(met$records), equals(366 * 24))
+	met <- Meteorology(SF.isc)
+	expect_true(inherits(met, "Meteorology"))
+	expect_that(nrow(met), equals(366 * 24))
 })

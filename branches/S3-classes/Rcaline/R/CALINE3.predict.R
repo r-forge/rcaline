@@ -12,6 +12,12 @@ CALINE3.predict <- function(
 	settling.velocity = 0.0, 
 	deposition.velocity = 0.0
 ) {	
+
+	message("Computing ", 
+		nrow(receptors), " receptors x ", 
+		nrow(links), " links x ", 
+		nrow(meteorology), " hourly conditions")
+	flush.console()
 			
 	# Receptor specifications. A SpatialPoints object or SpatialPointsDataFrame 
 	# is the preferred currency.
@@ -211,11 +217,9 @@ CALINE3.predict <- function(
 	# Call native code, allocating array C to hold results
 	array.shape <- c(NR, NM)
 	
-	# FIXME: temporary intercept
-	message("Modeling ", NR, " receptors x ", NL, " links x ", NM, " hours")
 	#message("Array shape is ", array.shape)
 	#return(list(NR, XR, YR, ZR, NL, XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL, NM, UM, BRGM, CLASM, MIXHM, ATIM, Z0, VS, VD))
-		
+
 	returned_data <- .Fortran(
 		"CALINE3_HOURLY_RECEPTOR_TOTALS", 
 		NR, XR, YR, ZR,
@@ -226,9 +230,16 @@ CALINE3.predict <- function(
 		PACKAGE = "Rcaline"
 	)
 	
-	# Reshape and return results
+	# Reshape results
 	predicted <- returned_data$C
 	dim(predicted) <- array.shape
+	
+	# Label with appropriate units.
+	# NOTE: CALINE3 defaults to reporting values in 'ppm CO'.
+	#       Rcaline defaults to reporting values in 'ug/m3'.
+	#       Use 'convertToPPM()' to convert.
+	units(predicted) <- 'ug/m3'
+	
 	return(predicted)
 	
 }

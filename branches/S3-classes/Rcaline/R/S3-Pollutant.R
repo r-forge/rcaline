@@ -1,3 +1,14 @@
+#' Construct a Pollutant object.
+#'
+#' Use to override the default pollutant in \link{\code{Caline3Model}}.
+#'
+#' @param name TODO
+#' @param molecularWeight TODO
+#' @param settlingVelocity TODO
+#' @param depositionVelocity TODO
+#' @return a Pollutant object
+#' @keywords pollutant model
+#' @export
 Pollutant <- function(name, molecularWeight, settlingVelocity=0.0, depositionVelocity=0.0) {
       obj <- list(
             name = name,

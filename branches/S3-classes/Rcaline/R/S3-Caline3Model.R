@@ -1,3 +1,24 @@
+#' Construct a Caline3Model object.
+#'
+#' The model (object) contains all of the link and meteorology data,
+#' as well as site-specific model parameters, such as surface roughness.
+#'
+#' Internally, these are stored as single-precision arrays. If you want to
+#' experiment by changing a parameter, construct a new Caline3Model, unless 
+#' you really know what you are doing.
+#'
+#' Use \code{\link{predict.Caline3Model}} to predict concentrations at a given set of receptors.
+#'
+#' @param links a \code{\link{FreeFlowLinks}} object
+#' @param meteorology a \code{\link{Meteorology}} object
+#' @param surfaceRoughness defaults to 300.0 (semi-urban); values between 0-400 cm are sane.
+#' @param averagingTime in minutes
+#' @param settlingVelocity of the modeled pollutant
+#' @param depositionVelocity of the modeled pollutant
+#' @return a Caline3Model object
+#' @keywords model
+#' @seealso predict.Caline3Model HourlyConcentrations AggregatedConcentrations
+#' @export
 Caline3Model <- function(links, meteorology, surfaceRoughness, 
 	averagingTime=60.0, settlingVelocity=0.0, depositionVelocity=0.0) {
 	
@@ -38,18 +59,31 @@ Caline3Model <- function(links, meteorology, surfaceRoughness,
 		.args = args)
 	
 	class(obj) <- "Caline3Model"
+	
 	return(obj)
 		
 }
 
-predict.Caline3Model <- function(model, receptors, .parallel=TRUE) {
+#' Use a Caline3Model to predict concentrations at a given set of receptors.
+#'
+#' Returns "raw" estimates in the form of a matrix. Each row corresponds to a receptor,
+#' and each column to a meteorological condition. Use \code{\link{aggregate.HourlyConcentrations}}
+#' on the result to obtain summary statistics for each receptor: mean, max, etc.
+#'
+#' @param object a \code{\link{Caline3Model}} object
+#' @param receptors created with \code{\link{ReceptorRings}} or \code{\link{ReceptorGrid}}
+#' @param .parallel logical; attempt to use the \code{\foreach} package to exploit multiple cores or hosts?
+#' @return matrix of predicted values
+#' @keywords predict model
+#' @S3method predict Caline3Model
+predict.Caline3Model <- function(object, receptors, .parallel=TRUE, ...) {
 	rcp <- as.data.frame(receptors)
 	if(.Platform$GUI %in% c("AQUA") && .parallel) {
-		warning("The R.app GUI precludes the safe use of multicore functionality. You can use Terminal though ...")
+		warning("Using R.app precludes safe use of multicore. Try xterm instead?")
 		.parallel = FALSE
 		registerDoSEQ()
 	}
-	if(.parallel) {
+	if(.parallel == TRUE) {
 		require(foreach)
 		require(multicore)
 		n.cores <- multicore:::detectCores() - 1
@@ -57,29 +91,70 @@ predict.Caline3Model <- function(model, receptors, .parallel=TRUE) {
 		registerDoMC(cores=n.cores)
 		k <- sort(rep(1:n.cores, length.out=nrow(rcp)))
 		jobs <- suppressWarnings(split(rcp, k))
-		pred <- foreach(rcp=iter(jobs), .combine=rbind) %dopar% predict(model, rcp, .parallel=FALSE)
+		hourly <- foreach(rcp=iter(jobs), .combine=rbind) %dopar% predict(model, rcp, .parallel=FALSE)
 	} else {
 		args <- c(list(XR = real4(rcp$x), YR = real4(rcp$y), ZR = real4(rcp$z)), model$.args)
-		pred <- do.call(".caline3.receptor_totals", args)
+		hourly <- do.call(".caline3.receptor_totals", args)
 	}	
-	rownames(pred) <- rownames(receptors)
-	colnames(pred) <- rownames(model$meteorology$records)
-	obj <- list(
-		model = model,
-		receptors = receptors,
-		predicted = pred)
-	class(obj) <- "Caline3Estimate"
-	return(obj)
+	rownames(hourly) <- rownames(receptors)
+	colnames(hourly) <- rownames(model$meteorology)
+	class(hourly) <- c("HourlyConcentrations", "matrix")
+	attr(hourly, "model") <- model
+	attr(hourly, "receptors") <- receptors
+	return(hourly)
 }
 
-summary.Caline3Estimate <- function(est, functions=list("min", "mean", "median", "GM", "max", "sd"), window=1, na.rm=T) {
-	rcp <- est$receptors
-	GM <- function(x) exp(mean(log(x)))
-	MA <- function(w) function(x) as.numeric(na.omit(filter(x, rep(1/w, w))))
-	summary.values <- lapply(functions, function(f) apply(est$predicted, 1, f))
-	stopifnot(nrow(summary.values) == nrow(rcp))
-	summary.data <- as.data.frame(do.call(cbind, summary.values))
-	colnames(summary.data) <- functions
-	obj <- SpatialPointsDataFrame(rcp, data=data.frame(rcp@data, summary.data))
-	return(obj)
+#' Aggregate the "raw" result matrix obtained from \code{\link{predict.Caline3Model}},
+#' summarizing the hourly estimates for each receptor. 
+#'
+#' Use \code{\link{as.SpatialPointsDataFrame}} to re-bind these summary statistics 
+#' with the locations (and other attributes) of the receptors used in the prediction step.
+#'
+#' @param x hourly concentrations obtained from \code{\link{predict.Caline3Model}}
+#' @param FUN a list of summary functions to apply to each receptor
+#' @param na.rm logical; passed to each summary function in turn
+#'
+#' @return matrix of summary statistics\
+#'
+#' @name aggregate 
+#' @rdname aggregate 
+#' @method aggregate HourlyConcentrations
+#' @S3method aggregate HourlyConcentrations
+aggregate.HourlyConcentrations <- function(x, FUN=list("min", "mean", "median", "GM", "max", "sd"), na.rm=T, ...) {
+	GM <- function(x, ...) exp(mean(log(x), ...))
+	agg <- do.call(cbind, lapply(FUN, function(f) apply(hourly, 1, f, na.rm=na.rm)))
+	colnames(agg) <- FUN
+	rownames(agg) <- rownames(hourly)
+	units(agg) <- units(hourly)
+	class(agg) <- c("AggregatedConcentrations", "matrix")
+	attr(agg, "model") <- attr(hourly, "model")
+	attr(agg, "receptors") <- attr(hourly, "receptors")
+	return(agg)
 }
+
+#' Class representing aggregated concentrations
+#' 
+#' @rdname as.AggregatedConcentrations.SpatialPointsDataFrame
+#' @name AggregatedConcentrations
+setOldClass("AggregatedConcentrations")
+
+#' Aggregate the "raw" result matrix obtained from \code{\link{predict.Caline3Model}}.
+#'
+#' Summarizes the hourly estimates for each receptor. 
+#'
+#' Use \code{\link{as.SpatialPointsDataFrame}} to re-bind these summary statistics 
+#' with the locations (and other attributes) of the receptors used in the prediction step.
+#'
+#' @param from an AggregatedConcentrations object
+#' @return a SpatialPointsDataFrame
+#' @keywords predict model
+setAs("AggregatedConcentrations", "SpatialPointsDataFrame", function(from) {
+	receptors <- attr(from, "receptors")
+	spdf <- SpatialPointsDataFrame(
+		coordinates(receptors), 
+		data = data.frame(receptors@data, as.data.frame(from))
+	)
+	proj4string(spdf) <- proj4string(receptors)
+	return(spdf)
+})
+
