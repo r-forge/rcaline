@@ -15,7 +15,9 @@
 #' @param averagingTime in minutes
 #' @param settlingVelocity of the modeled pollutant
 #' @param depositionVelocity of the modeled pollutant
+#'
 #' @return a Caline3Model object
+#'
 #' @keywords model
 #' @seealso predict.Caline3Model HourlyConcentrations AggregatedConcentrations
 #' @export
@@ -72,11 +74,15 @@ Caline3Model <- function(links, meteorology, surfaceRoughness,
 #'
 #' @param object a \code{\link{Caline3Model}} object
 #' @param receptors created with \code{\link{ReceptorRings}} or \code{\link{ReceptorGrid}}
-#' @param .parallel logical; attempt to use the \code{\foreach} package to exploit multiple cores or hosts?
+#' @param .parallel logical; attempt to use the \code{foreach} package to exploit multiple cores or hosts?
+#' @param ... other arguments
+#'
 #' @return matrix of predicted values
 #' @keywords predict model
 #' @S3method predict Caline3Model
+#' @importFrom stats predict
 predict.Caline3Model <- function(object, receptors, .parallel=TRUE, ...) {
+	model <- object
 	rcp <- as.data.frame(receptors)
 	if(.Platform$GUI %in% c("AQUA") && .parallel) {
 		warning("Using R.app precludes safe use of multicore. Try xterm instead?")
@@ -107,19 +113,20 @@ predict.Caline3Model <- function(object, receptors, .parallel=TRUE, ...) {
 #' Aggregate the "raw" result matrix obtained from \code{\link{predict.Caline3Model}},
 #' summarizing the hourly estimates for each receptor. 
 #'
-#' Use \code{\link{as.SpatialPointsDataFrame}} to re-bind these summary statistics 
+#' Use \code{as(x, "SpatialPointsDataFrame")} to re-bind these summary statistics 
 #' with the locations (and other attributes) of the receptors used in the prediction step.
 #'
 #' @param x hourly concentrations obtained from \code{\link{predict.Caline3Model}}
 #' @param FUN a list of summary functions to apply to each receptor
 #' @param na.rm logical; passed to each summary function in turn
+#' @param ... other arguments
 #'
 #' @return matrix of summary statistics\
 #'
-#' @name aggregate 
-#' @rdname aggregate 
-#' @method aggregate HourlyConcentrations
+#' @name aggregate.HourlyConcentrations
+#' @method aggregate.HourlyConcentrations
 #' @S3method aggregate HourlyConcentrations
+#' @importFrom stats aggregate
 aggregate.HourlyConcentrations <- function(x, FUN=list("min", "mean", "median", "GM", "max", "sd"), na.rm=T, ...) {
 	GM <- function(x, ...) exp(mean(log(x), ...))
 	agg <- do.call(cbind, lapply(FUN, function(f) apply(hourly, 1, f, na.rm=na.rm)))
@@ -134,20 +141,18 @@ aggregate.HourlyConcentrations <- function(x, FUN=list("min", "mean", "median", 
 
 #' Class representing aggregated concentrations
 #' 
-#' @rdname as.AggregatedConcentrations.SpatialPointsDataFrame
-#' @name AggregatedConcentrations
+#' @name as.SpatialPointsDataFrame.AggregatedConcentrations
 setOldClass("AggregatedConcentrations")
 
-#' Aggregate the "raw" result matrix obtained from \code{\link{predict.Caline3Model}}.
-#'
-#' Summarizes the hourly estimates for each receptor. 
-#'
-#' Use \code{\link{as.SpatialPointsDataFrame}} to re-bind these summary statistics 
-#' with the locations (and other attributes) of the receptors used in the prediction step.
+#' Re-bind results obtained from \code{aggregate(x)} to a SpatialPointsDataFrame.
 #'
 #' @param from an AggregatedConcentrations object
+#'
 #' @return a SpatialPointsDataFrame
+#'
 #' @keywords predict model
+#' @importClassesFrom sp SpatialPointsDataFrame
+#' @name as.SpatialPointsDataFrame.AggregatedConcentrations
 setAs("AggregatedConcentrations", "SpatialPointsDataFrame", function(from) {
 	receptors <- attr(from, "receptors")
 	spdf <- SpatialPointsDataFrame(

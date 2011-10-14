@@ -1,6 +1,6 @@
 #' Construct a Pollutant object.
 #'
-#' Use to override the default pollutant in \link{\code{Caline3Model}}.
+#' Use to override the default pollutant in \code{\link{Caline3Model}}.
 #'
 #' @param name TODO
 #' @param molecularWeight TODO

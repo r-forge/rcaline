@@ -23,8 +23,9 @@ LinkType <- function(x) {
 #'
 #' Requires \code{rgdal} (FIXME: use maptools also?)
 #' 
-#'
 #' @param filename filename
+#' @param ... other arguments
+#'
 #' @keywords shapefile
 #' @export
 read.shp <- function(filename, ...) {
@@ -36,7 +37,6 @@ read.shp <- function(filename, ...) {
 	} else {
 		stop("rgdal must be installed in order to read shapefiles.") 
 	}
-	#stopifnot(inherits(sldf, "SpatialLines"))
 	stopifnot(is.projected(sldf))
 	return(sldf)
 }
@@ -50,21 +50,19 @@ read.shp <- function(filename, ...) {
 #' A FreeFlowLinks object can be plotted with \code{\link{plot}} or coerced 
 #' to a \code{data.frame} with \code{\link{as.data.frame}}.
 #' 
+#' @param x a .shp file, or a SpatialLines object
 #' @param vehiclesPerHour average number of vehicles per hour (also known as "flow")
 #' @param emissionFactor emissions per vehicle, in grams per mile (per hour)
 #' @param width mixing zone width, in meters
 #' @param height elevation above ground level (not sea level!)
 #' @param classification see \code{\link{LinkType}} for possible values
+#' @param ... other arguments
+#' 
 #' @return a FreeFlowLinks object
 #' @keywords links
+#' @importClassesFrom sp SpatialLinesDataFrame
 #' @export
-FreeFlowLinks <- function(x, 
-	vehiclesPerHour = stop("vehiclesPerHour must be specified"), 
-	emissionFactor = stop("emissionFactor must be specified"),
-	width = 30.0,
-	height = 0.0,
-	classification = 'AG',
-	...) 
+FreeFlowLinks <- function( x, vehiclesPerHour = stop("vehiclesPerHour must be specified"), emissionFactor = stop("emissionFactor must be specified"), width = 30.0, height = 0.0, classification = 'AG', ...) 
 {
 	if(missing(vehiclesPerHour))
 		stop("vehiclesPerHour must be specified")
@@ -100,10 +98,12 @@ FreeFlowLinks <- function(x,
 #'
 #' @param x a FreeFlowLinks object
 #' @param row.names TODO
-#' @param options TODO
+#' @param optional TODO
 #' @param ... other arguments
+#' 
 #' @return a data.frame
 #' @keywords links
+#' @importClassesFrom sp SpatialLines SpatialLinesDataFrame
 #' @export
 as.data.frame.FreeFlowLinks <- function(x, row.names, optional, ...) {
 	centerlines <- as(links, "SpatialLines")
@@ -119,10 +119,14 @@ as.data.frame.FreeFlowLinks <- function(x, row.names, optional, ...) {
 #'
 #' Returns a SpatialLines object.
 #'
-#' @param links
+#' @param links a FreeFlowLinks object
+#'
 #' @return a SpatialLines object
 #' @keywords links
+#'
+#' @importClassesFrom sp SpatialLines SpatialLinesDataFrame
 #' @S3method as.SpatialLines FreeFlowLinks
+#' @export
 as.SpatialLines.FreeFlowLinks <- function(links) {
 	return(links$centerlines)
 }
@@ -132,8 +136,12 @@ as.SpatialLines.FreeFlowLinks <- function(links) {
 #' Works just like \code{\link{lines}}.
 #'
 #' @param x a FreeFlowLinks object
+#' @param ... other arguments
+#' 
 #' @keywords links
+#' @importClassesFrom sp SpatialLines SpatialLinesDataFrame
 #' @S3method lines FreeFlowLinks
+#' @export
 lines.FreeFlowLinks <- function(x, ...) {
 	lines(as.SpatialLines(x), ...)
 }
@@ -146,8 +154,11 @@ lines.FreeFlowLinks <- function(x, ...) {
 #' Prettier but slower than \code{\link{lines}}.
 #'
 #' @param x a FreeFlowLinks object
+#' @param ... other arguments
+#' 
 #' @keywords links
 #' @S3method plot FreeFlowLinks
+#' @export
 plot.FreeFlowLinks <- function(x, ...) {
 	require(ggplot2)
 	kilo <- function(x) x / 1000.0

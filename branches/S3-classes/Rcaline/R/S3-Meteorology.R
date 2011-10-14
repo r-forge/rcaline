@@ -19,7 +19,11 @@ Pasquill <- function(x) {
 #' required by CALINE3.
 #'
 #' @param filename filename
+#'
+#' @return an ISCFile object
+#'
 #' @keywords meteorology
+#' @export
 ISCFile <- function(filename) {
 
 	# Assert that the file exists
@@ -55,7 +59,9 @@ ISCFile <- function(filename) {
 #'
 #' @param iscfile filename or ISCFile object
 #' @param use whether to use urban or rural mixing heights
+#'
 #' @return a Meteorology object (basically a \code{data.frame})
+#'
 #' @keywords meteorology
 #' @export
 Meteorology <- function(iscfile, use = c("urban", "rural")) {
@@ -99,8 +105,11 @@ Meteorology <- function(iscfile, use = c("urban", "rural")) {
 #' Plots a wind rose using ggplot2.
 #'
 #' @param x a Meteorology object
+#' @param ... other arguments
+#'
 #' @keywords meteorology
 #' @S3method plot Meteorology
+#' @export
 plot.Meteorology <- function(x, ...) {
 	require(ggplot2)
 	p <- ggplot(data=as.data.frame(meteorology))
