@@ -69,7 +69,7 @@ Caline3Model <- function(links, meteorology, surfaceRoughness,
 #' Use a Caline3Model to predict concentrations at a given set of receptors.
 #'
 #' Returns "raw" estimates in the form of a matrix. Each row corresponds to a receptor,
-#' and each column to a meteorological condition. Use \code{\link{aggregate.HourlyConcentrations}}
+#' and each column to a meteorological condition. Use \code{aggregate()}
 #' on the result to obtain summary statistics for each receptor: mean, max, etc.
 #'
 #' @param object a \code{\link{Caline3Model}} object
@@ -78,9 +78,11 @@ Caline3Model <- function(links, meteorology, surfaceRoughness,
 #' @param ... other arguments
 #'
 #' @return matrix of predicted values
+#'
 #' @keywords predict model
 #' @S3method predict Caline3Model
 #' @importFrom stats predict
+#' @export
 predict.Caline3Model <- function(object, receptors, .parallel=TRUE, ...) {
 	model <- object
 	rcp <- as.data.frame(receptors)
@@ -123,10 +125,9 @@ predict.Caline3Model <- function(object, receptors, .parallel=TRUE, ...) {
 #'
 #' @return matrix of summary statistics\
 #'
-#' @name aggregate.HourlyConcentrations
-#' @method aggregate.HourlyConcentrations
 #' @S3method aggregate HourlyConcentrations
 #' @importFrom stats aggregate
+#' @export
 aggregate.HourlyConcentrations <- function(x, FUN=list("min", "mean", "median", "GM", "max", "sd"), na.rm=T, ...) {
 	GM <- function(x, ...) exp(mean(log(x), ...))
 	agg <- do.call(cbind, lapply(FUN, function(f) apply(hourly, 1, f, na.rm=na.rm)))
@@ -139,9 +140,6 @@ aggregate.HourlyConcentrations <- function(x, FUN=list("min", "mean", "median", 
 	return(agg)
 }
 
-#' Class representing aggregated concentrations
-#' 
-#' @name as.SpatialPointsDataFrame.AggregatedConcentrations
 setOldClass("AggregatedConcentrations")
 
 #' Re-bind results obtained from \code{aggregate(x)} to a SpatialPointsDataFrame.
@@ -150,9 +148,10 @@ setOldClass("AggregatedConcentrations")
 #'
 #' @return a SpatialPointsDataFrame
 #'
+#' @name as
 #' @keywords predict model
 #' @importClassesFrom sp SpatialPointsDataFrame
-#' @name as.SpatialPointsDataFrame.AggregatedConcentrations
+#' @export
 setAs("AggregatedConcentrations", "SpatialPointsDataFrame", function(from) {
 	receptors <- attr(from, "receptors")
 	spdf <- SpatialPointsDataFrame(

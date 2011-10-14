@@ -62,7 +62,7 @@ read.shp <- function(filename, ...) {
 #' @keywords links
 #' @importClassesFrom sp SpatialLinesDataFrame
 #' @export
-FreeFlowLinks <- function( x, vehiclesPerHour = stop("vehiclesPerHour must be specified"), emissionFactor = stop("emissionFactor must be specified"), width = 30.0, height = 0.0, classification = 'AG', ...) 
+FreeFlowLinks <- function(x, vehiclesPerHour, emissionFactor, width=30.0, height=0.0, classification='AG', ...) 
 {
 	if(missing(vehiclesPerHour))
 		stop("vehiclesPerHour must be specified")

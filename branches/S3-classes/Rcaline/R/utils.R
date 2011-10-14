@@ -21,9 +21,12 @@ units <- function(x) attr(x, "units")
 
 #' Set the "units" attribute on a numeric vector.
 #'
+#' @usage units(x) <- value
+#'
 #' @param value replacement value
+#'
 #' @keywords units
-#' @name units
+#' @rdname units
 #' @export
 `units<-` <- function(x, value) {
 	attr(x, "units") <- value

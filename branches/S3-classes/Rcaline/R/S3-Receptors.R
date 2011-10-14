@@ -8,7 +8,9 @@
 #' @param resolution spacing between receptors (both directions), in meters
 #' @param maxDistance TODO
 #' @param rgeos.scale TODO
+#'
 #' @return SpatialPointsDataFrame
+#'
 #' @keywords receptors
 #' @seealso ReceptorRings
 #' @export
@@ -34,7 +36,10 @@ ReceptorGrid <- function(links, height=1.8, resolution=1000.0, maxDistance=1000.
 #' @param height height in meters
 #' @param distances list of distances to the roadway centerline, in meters
 #' @param spacing TODO
+#' @param rgeos.scale TODO
+#'
 #' @return SpatialPointsDataFrame
+#'
 #' @keywords receptors
 #' @seealso ReceptorGrid
 #' @export
