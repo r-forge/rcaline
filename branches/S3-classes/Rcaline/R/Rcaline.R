@@ -17,4 +17,6 @@
 #'
 #' @keywords package environmental modeling disperson CALINE CALINE3 traffic
 #'
+#' @importClassesFrom sp SpatialPoints SpatialPointsDataFrame SpatialLines SpatialLinesDataFrame
+#'
 NA

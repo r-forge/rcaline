@@ -14,33 +14,6 @@ LinkType <- function(x) {
 	)
 }
 
-#' Read a shapefile into memory.
-#'
-#' The shapefile must be in projected coordinates. Latitude and 
-#' longitude are not acceptable. If needed, reproject the shapefile
-#' first using your favorite GIS program. If you don't have ArcGIS,
-#' try Quantum GIS (it's free).
-#'
-#' Requires \code{rgdal} (FIXME: use maptools also?)
-#' 
-#' @param filename filename
-#' @param ... other arguments
-#'
-#' @keywords shapefile
-#' @export
-read.shp <- function(filename, ...) {
-	if(is.installed("rgdal")) {
-		suppressPackageStartupMessages(require(rgdal))
-		dsn <- dirname(filename)
-		layer <- gsub(".shp$", "", basename(filename))
-		sldf <- suppressMessages(rgdal::readOGR(dsn, layer, ...)) 
-	} else {
-		stop("rgdal must be installed in order to read shapefiles.") 
-	}
-	stopifnot(is.projected(sldf))
-	return(sldf)
-}
-
 #' Construct a FreeFlowLinks object.
 #'
 #' \code{vehiclesPerHour}, \code{emissionFactor}, and other arguments
@@ -60,7 +33,6 @@ read.shp <- function(filename, ...) {
 #' 
 #' @return a FreeFlowLinks object
 #' @keywords links
-#' @importClassesFrom sp SpatialLinesDataFrame
 #' @export
 FreeFlowLinks <- function(x, vehiclesPerHour, emissionFactor, width=30.0, height=0.0, classification='AG', ...) 
 {
@@ -83,51 +55,25 @@ FreeFlowLinks <- function(x, vehiclesPerHour, emissionFactor, width=30.0, height
 	formalArgs <- args[names(args) %in% names(formals())]
 	
 	obj <- list()
+	class(obj) <- "FreeFlowLinks"
 	obj$centerlines <- sldf
 	obj$transformArgs <- c(formalArgs[-1], list(width=width, height=height, classification=classification))
-	class(obj) <- "FreeFlowLinks"
+
+	# Precompute the segments
+	attr(obj, ".data") <- as.data.frame(obj)
+	
 	return(obj)
 }
 
-#' Convert a FreeFlowLinks object to a data.frame.
-#'
-#' Each row in the data.frame corresponds to one or more segments from
-#' the original (polyline) geometry. The starting coordinates (XL1, YL1)
-#' and ending coordinates (XL2, YL2) are preserved as columns in the data.frame. 
-#' Attributes are also preserved as columns.
-#'
-#' @param x a FreeFlowLinks object
-#' @param row.names TODO
-#' @param optional TODO
-#' @param ... other arguments
-#' 
-#' @return a data.frame
-#' @keywords links
-#' @importClassesFrom sp SpatialLines SpatialLinesDataFrame
-#' @export
-as.data.frame.FreeFlowLinks <- function(x, row.names, optional, ...) {
-	centerlines <- as(links, "SpatialLines")
-	segments <- decimate(centerlines)
-	colnames(segments) <- c("XL1", "YL1", "XL2", "YL2")
-	attrs <- do.call("transform", c(list(centerlines(links)@data), links$transformArgs))
-	dat <- suppressWarnings(merge(segments, attrs, by="row.names"))
-	colnames(dat)[colnames(dat) == "Row.names"] <- "ID"
-	return(dat)
-}
-
-#' Extract the geometry from a FreeFlowLinks object.
-#'
-#' Returns a SpatialLines object.
+#' Get the centerlines from a FreeFlowLinks object.
 #'
 #' @param links a FreeFlowLinks object
 #'
 #' @return a SpatialLines object
-#' @keywords links
 #'
-#' @importClassesFrom sp SpatialLines SpatialLinesDataFrame
-#' @S3method as.SpatialLines FreeFlowLinks
+#' @keywords links
 #' @export
-as.SpatialLines.FreeFlowLinks <- function(links) {
+centerlines <- function(links) {
 	return(links$centerlines)
 }
 
@@ -139,11 +85,10 @@ as.SpatialLines.FreeFlowLinks <- function(links) {
 #' @param ... other arguments
 #' 
 #' @keywords links
-#' @importClassesFrom sp SpatialLines SpatialLinesDataFrame
 #' @S3method lines FreeFlowLinks
 #' @export
 lines.FreeFlowLinks <- function(x, ...) {
-	lines(as.SpatialLines(x), ...)
+	lines(centerlines(x), ...)
 }
 
 #' Plot a FreeFlowLinks object using \code{ggplot2}.
@@ -160,6 +105,7 @@ lines.FreeFlowLinks <- function(x, ...) {
 #' @S3method plot FreeFlowLinks
 #' @export
 plot.FreeFlowLinks <- function(x, ...) {
+	links <- x
 	require(ggplot2)
 	kilo <- function(x) x / 1000.0
 	easting <- function(...) scale_x_continuous("Easting (km)", formatter = kilo, ...)

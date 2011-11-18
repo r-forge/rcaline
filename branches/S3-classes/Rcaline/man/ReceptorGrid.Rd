@@ -2,13 +2,13 @@
 \alias{ReceptorGrid}
 \title{Construct a set of receptors in the vicinity of a set of links.}
 \usage{
-  ReceptorGrid(links, height = 1.8, resolution = 1000,
+  ReceptorGrid(links, elevation = 1.8, resolution = 1000,
   maxDistance = 1000, rgeos.scale = 1e+06)
 }
 \arguments{
   \item{links}{basis}
 
-  \item{height}{height in meters}
+  \item{elevation}{elevation in meters}
 
   \item{resolution}{spacing between receptors (both
   directions), in meters}

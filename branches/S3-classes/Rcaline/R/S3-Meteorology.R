@@ -43,6 +43,11 @@ ISCFile <- function(filename) {
 			"mixingHeight.rural", "mixingHeight.urban")
 	)
 	
+	if(all(obj$year < 100)) {
+		warning("Adding 1900 to two-digit years")
+		obj <- transform(obj, year = year + 1900)
+	}
+	
 	# FIXME put the header data here
 	attr(obj, "metadata") <- NA
 	
@@ -88,6 +93,14 @@ Meteorology <- function(iscfile, use = c("urban", "rural")) {
 			)
 		)
 	)
+
+	# Warn about calm wind speeds
+	with(met, {
+		calm <- which(windSpeed < 1)
+		if(length(calm) > 0)
+			warning(length(calm), " conditions with wind speed less than 1.0 m/s. These will produce NA's.")
+	})
+
 	row.names(met) <- with(iscfile,
 		as.POSIXlt(sprintf("%02d/%02d/%02d %02d:00:00", year, month, day, hour - 1))
 	)	
@@ -112,7 +125,7 @@ Meteorology <- function(iscfile, use = c("urban", "rural")) {
 #' @export
 plot.Meteorology <- function(x, ...) {
 	require(ggplot2)
-	p <- ggplot(data=as.data.frame(meteorology))
+	p <- ggplot(data=as.data.frame(x))
 	p <- p + geom_histogram(aes(x=windBearing, y=..density..), binwidth=45/2)
 	p <- p + scale_x_continuous(limits=c(0,360), breaks=seq(0, 360, by=45))
 	return(p + coord_polar(theta='x'))

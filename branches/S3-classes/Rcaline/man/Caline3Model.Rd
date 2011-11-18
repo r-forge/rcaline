@@ -2,9 +2,7 @@
 \alias{Caline3Model}
 \title{Construct a Caline3Model object.}
 \usage{
-  Caline3Model(links, meteorology, surfaceRoughness,
-  averagingTime = 60, settlingVelocity = 0,
-  depositionVelocity = 0)
+  Caline3Model(links, meteorology, receptors, parameters)
 }
 \arguments{
   \item{links}{a \code{\link{FreeFlowLinks}} object}

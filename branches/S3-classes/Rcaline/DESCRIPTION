@@ -44,3 +44,6 @@ Collate:
     'S3-Pollutant.R'
     'S3-Receptors.R'
     'utils.R'
+    'S3-FortranArrays.R'
+    'S3-Methods.R'
+    'S3-Parameters.R'

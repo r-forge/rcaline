@@ -12,13 +12,7 @@ CALINE3.predict <- function(
 	settling.velocity = 0.0, 
 	deposition.velocity = 0.0
 ) {	
-
-	message("Computing ", 
-		nrow(receptors), " receptors x ", 
-		nrow(links), " links x ", 
-		nrow(meteorology), " hourly conditions")
-	flush.console()
-			
+	
 	# Receptor specifications. A SpatialPoints object or SpatialPointsDataFrame 
 	# is the preferred currency.
 	if(hasMethod('coordinates', class(receptors))) {
@@ -181,8 +175,8 @@ CALINE3.predict <- function(
 	# Meteorology specifications.
 	NM <- as.integer(length(UM))
 	stopifnot( all.equal(NM, length(BRGM), length(CLASM), length(MIXHM)))
-	if(any(is.na(UM)) || any(UM < 1.0))
-		stop("Wind speeds must not be less than 1.0 m/s, and cannot include NA values. See ?read.ISC for more.")
+	if(any(is.na(UM)))
+		stop("Wind speeds cannot include NA values. See ?read.ISC for more.")
 	if(any(is.na(BRGM)) || any(BRGM < 0) || any(BRGM > 360))
 		stop("Wind bearings must be between 0 and 360 degrees, and cannot include NA values. See ?read.ISC for more.")
 	if(any(is.na(CLASM)))
@@ -214,30 +208,32 @@ CALINE3.predict <- function(
 	stopifnot(all.equal(NL, length(YL1), length(XL2), length(YL2),
 		length(WL), length(HL), length(NTYP), length(VPHL), length(EFL)))
 		
+	# for(varname in c("NR", "XR", "YR", "ZR", "NL", "XL1", "YL1", "XL2", "YL2", "WL", "HL", "NTYP", "VPHL", "EFL", "NM", "UM", "BRGM", "CLASM", "MIXHM", "ATIM", "Z0", "VS", "VD")) {
+	# 		value <- get(varname)
+	# 		message(varname, " is ", value)
+	# 	}
+	
 	# Call native code, allocating array C to hold results
 	array.shape <- c(NR, NM)
-	
-	#message("Array shape is ", array.shape)
-	#return(list(NR, XR, YR, ZR, NL, XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL, NM, UM, BRGM, CLASM, MIXHM, ATIM, Z0, VS, VD))
-
 	returned_data <- .Fortran(
-		"CALINE3_HOURLY_RECEPTOR_TOTALS", 
-		NR, XR, YR, ZR,
-		NL, XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL,
-		NM, UM, BRGM, CLASM, MIXHM,
-		ATIM, Z0, VS, VD,
-		C = as.single(array(0.0, dim=array.shape)),
-		PACKAGE = "Rcaline"
+	 	"CALINE3_HOURLY_RECEPTOR_TOTALS", 
+	 	NR, XR, YR, ZR,
+	 	NL, XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL,
+	 	NM, UM, BRGM, CLASM, MIXHM,
+	 	ATIM, Z0, VS, VD,
+	 	C = as.single(array(-1, dim=array.shape)),
+	 	PACKAGE = "Rcaline"
 	)
 	
-	# Reshape results
-	predicted <- returned_data$C
-	dim(predicted) <- array.shape
-	
+	# Reshape results, substituting NA for missing values
+	predicted <- matrix(
+		with(returned_data, replace(C, which(C < 0), NA)),
+		ncol = NM, 
+		nrow = NR)
+
 	# Label with appropriate units.
 	# NOTE: CALINE3 defaults to reporting values in 'ppm CO'.
-	#       Rcaline defaults to reporting values in 'ug/m3'.
-	#       Use 'convertToPPM()' to convert.
+	#       Rcaline:::libcaline3.f does not multiply by FPPM, so values are in ug / m3.
 	units(predicted) <- 'ug/m3'
 	
 	return(predicted)

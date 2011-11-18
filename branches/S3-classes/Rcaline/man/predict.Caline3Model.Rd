@@ -2,8 +2,8 @@
 \alias{predict.Caline3Model}
 \title{Use a Caline3Model to predict concentrations at a given set of receptors.}
 \usage{
-  predict.Caline3Model(object, receptors, .parallel = TRUE,
-  ...)
+  predict.Caline3Model(links, receptors, meteorology,
+  parameters, .parallel, ...)
 }
 \arguments{
   \item{object}{a \code{\link{Caline3Model}} object}

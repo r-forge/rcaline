@@ -4,7 +4,7 @@
 #' than \code{maxDistance} from \code{links}.
 #'
 #' @param links basis
-#' @param height height in meters
+#' @param elevation elevation in meters
 #' @param resolution spacing between receptors (both directions), in meters
 #' @param maxDistance TODO
 #' @param rgeos.scale TODO
@@ -14,7 +14,7 @@
 #' @keywords receptors
 #' @seealso ReceptorRings
 #' @export
-ReceptorGrid <- function(links, height=1.8, resolution=1000.0, maxDistance=1000.0, rgeos.scale=1e+06) {
+ReceptorGrid <- function(links, elevation=1.8, resolution=1000.0, maxDistance=1000.0, rgeos.scale=1e+06) {
 	require(rgeos)
 	rgeos::setScale(rgeos.scale)
 	# TODO: take width into account (don't measure distance from centerline, but from edge of road)
@@ -22,9 +22,8 @@ ReceptorGrid <- function(links, height=1.8, resolution=1000.0, maxDistance=1000.
 	buf <- rgeos::gBuffer(spgeom, width=maxDistance)
 	xy <- spsample(buf, cellsize = c(resolution, resolution), type = "regular")
 	coordnames(xy) <- c("x", "y")
-	z <- data.frame(z = rep(1.8, length(xy)))
 	spdf <- SpatialPointsDataFrame(xy, data=z)
-	return(spdf)
+	return(Receptors(spdf, elevation=elevation))
 }
 
 #' Construct a set of receptors in the vicinity of a set of links.
@@ -33,7 +32,7 @@ ReceptorGrid <- function(links, height=1.8, resolution=1000.0, maxDistance=1000.
 #' distances from \code{links}. 
 #'
 #' @param links basis
-#' @param height height in meters
+#' @param elevation elevation in meters
 #' @param distances list of distances to the roadway centerline, in meters
 #' @param spacing TODO
 #' @param rgeos.scale TODO
@@ -43,7 +42,7 @@ ReceptorGrid <- function(links, height=1.8, resolution=1000.0, maxDistance=1000.
 #' @keywords receptors
 #' @seealso ReceptorGrid
 #' @export
-ReceptorRings <- function(links, height=1.8, 
+ReceptorRings <- function(links, elevation=1.8, 
 	distances=c(50, 100, 250, 500, 1000), spacing=identity, rgeos.scale=1e+06) {
 		
 	require(rgeos)
@@ -63,10 +62,49 @@ ReceptorRings <- function(links, height=1.8,
 		d <- rep(ring.width, nrow(pts@coords)) 
 		SpatialPointsDataFrame(pts, data.frame(distance = d, spacing = spacings))
 	}
-	receptors <- do.call(rbind, mapply(spsample.ring, rings, distances, spacings = spacing(distances)))
-	
-	# Add the user-specified height
-	receptors$z <- height
-	
+	spobj <- do.call(rbind, mapply(spsample.ring, rings, distances, spacings=spacing(distances)))
+	return(Receptors(spobj, elevation=elevation))
+}
+
+#' Read receptor locations from a shapefile layer.
+#'
+#' @param file shapefile layer (filename ending in ".shp")
+#' @param elevation elevation in meters
+#' @param distances list of distances to the roadway centerline, in meters
+#' @param spacing TODO
+#' @param rgeos.scale TODO
+#'
+#' @return SpatialPointsDataFrame
+#'
+#' @keywords receptors
+#' @seealso ReceptorGrid
+#' @export
+ReceptorLocations <- function(x, elevation=1.8, ...) {
+	if(inherits(x, "Spatial")) {
+		spobj <- x
+	} else if(file.exists(x)) {
+		spobj <- read.shp(x)
+	} else {
+		stop("I don't know what to do with a ", class(x))
+	}
+	return(Receptors(spobj, elevation=elevation))
+}
+
+#' Promote a SpatialPoints* object to a Receptors object.
+#'
+#' @param spobj an object of class SpatialPoints or SpatialPointsDataFrame
+#' @param elevation elevation above ground, in meters
+#'
+#' @return object of class Receptors
+#'
+#' @keywords receptors
+#' @export
+Receptors <- function(spobj, elevation) {
+	stopifnot(inherits(spobj, "SpatialPoints"))
+	receptors <- spobj
+	coordnames(receptors) <- c("x", "y")
+	attr(receptors, "elevation") <- elevation
 	return(receptors)
 }
+
+
