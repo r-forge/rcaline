@@ -3,14 +3,14 @@
 <plist version="1.0">
 <dict>
 	<key>currentDocument</key>
-	<string>Rcaline/R/S3-Caline3Model.R</string>
+	<string>Rcaline/inst/tests/test.Caline3Model.R</string>
 	<key>documents</key>
 	<array>
 		<dict>
 			<key>filename</key>
 			<string>Rcaline/NAMESPACE</string>
 			<key>lastUsed</key>
-			<date>2011-10-12T18:41:14Z</date>
+			<date>2011-11-18T20:51:55Z</date>
 		</dict>
 		<dict>
 			<key>filename</key>
@@ -37,7 +37,7 @@
 					<key>filename</key>
 					<string>Rcaline/R/S3-Meteorology.R</string>
 					<key>lastUsed</key>
-					<date>2011-10-12T18:41:15Z</date>
+					<date>2011-11-18T20:57:34Z</date>
 				</dict>
 				<dict>
 					<key>filename</key>
@@ -58,13 +58,13 @@
 					<key>filename</key>
 					<string>Rcaline/R/S3-Links.R</string>
 					<key>lastUsed</key>
-					<date>2011-10-12T18:54:52Z</date>
+					<date>2011-11-18T20:41:20Z</date>
 				</dict>
 				<dict>
 					<key>filename</key>
 					<string>Rcaline/inst/tests/test.Links.R</string>
 					<key>lastUsed</key>
-					<date>2011-10-11T23:44:40Z</date>
+					<date>2011-11-18T19:59:35Z</date>
 				</dict>
 			</array>
 			<key>expanded</key>
@@ -79,13 +79,13 @@
 					<key>filename</key>
 					<string>Rcaline/R/S3-Receptors.R</string>
 					<key>lastUsed</key>
-					<date>2011-10-12T18:53:41Z</date>
+					<date>2011-11-18T20:51:41Z</date>
 				</dict>
 				<dict>
 					<key>filename</key>
 					<string>Rcaline/inst/tests/test.Receptors.R</string>
 					<key>lastUsed</key>
-					<date>2011-10-11T23:44:39Z</date>
+					<date>2011-11-18T19:23:17Z</date>
 				</dict>
 			</array>
 			<key>expanded</key>
@@ -106,9 +106,7 @@
 					<key>filename</key>
 					<string>Rcaline/R/S3-Caline3Model.R</string>
 					<key>lastUsed</key>
-					<date>2011-10-12T19:54:52Z</date>
-					<key>selected</key>
-					<true/>
+					<date>2011-11-18T21:07:26Z</date>
 				</dict>
 				<dict>
 					<key>filename</key>
@@ -120,13 +118,23 @@
 					<key>filename</key>
 					<string>Rcaline/inst/tests/test.Caline3Model.R</string>
 					<key>lastUsed</key>
-					<date>2011-10-12T19:00:43Z</date>
+					<date>2011-11-18T21:09:18Z</date>
 				</dict>
 			</array>
 			<key>expanded</key>
 			<true/>
 			<key>name</key>
 			<string>Predictions</string>
+		</dict>
+		<dict>
+			<key>expanded</key>
+			<true/>
+			<key>name</key>
+			<string>Rcaline</string>
+			<key>regexFolderFilter</key>
+			<string>!.*/(\.[^/]*|CVS|_darcs|_MTN|\{arch\}|blib|.*~\.nib|.*\.(framework|app|pbproj|pbxproj|xcode(proj)?|bundle))$</string>
+			<key>sourceDirectory</key>
+			<string>Rcaline</string>
 		</dict>
 	</array>
 	<key>fileHierarchyDrawerWidth</key>
@@ -138,7 +146,7 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>45</integer>
+				<integer>12</integer>
 				<key>line</key>
 				<integer>11</integer>
 			</dict>
@@ -152,9 +160,9 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>13</integer>
+				<integer>16</integer>
 				<key>line</key>
-				<integer>7</integer>
+				<integer>19</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
@@ -180,7 +188,7 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>92</integer>
+				<integer>2</integer>
 				<key>line</key>
 				<integer>20</integer>
 			</dict>
@@ -194,14 +202,30 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>53</integer>
+				<integer>60</integer>
 				<key>line</key>
-				<integer>67</integer>
+				<integer>23</integer>
 			</dict>
+			<key>columnSelection</key>
+			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>50</integer>
+			<integer>0</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>56</integer>
+				<key>line</key>
+				<integer>23</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>66</integer>
+				<key>line</key>
+				<integer>23</integer>
+			</dict>
 		</dict>
 		<key>Rcaline/R/S3-Links.R</key>
 		<dict>
@@ -215,28 +239,42 @@
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>44</integer>
+			<integer>0</integer>
 		</dict>
 		<key>Rcaline/R/S3-Meteorology.R</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>30</integer>
+				<integer>12</integer>
 				<key>line</key>
-				<integer>51</integer>
+				<integer>117</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
-			<integer>29</integer>
+			<integer>0</integer>
+		</dict>
+		<key>Rcaline/R/S3-Parameters.R</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>20</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
 		</dict>
 		<key>Rcaline/R/S3-Pollutant.R</key>
 		<dict>
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>48</integer>
+				<integer>19</integer>
 				<key>line</key>
 				<integer>4</integer>
 			</dict>
@@ -250,9 +288,23 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>2</integer>
+				<integer>27</integer>
 				<key>line</key>
-				<integer>15</integer>
+				<integer>92</integer>
+			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>69</integer>
+		</dict>
+		<key>Rcaline/data/SanFrancisco.R</key>
+		<dict>
+			<key>caret</key>
+			<dict>
+				<key>column</key>
+				<integer>84</integer>
+				<key>line</key>
+				<integer>19</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
@@ -264,9 +316,9 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>0</integer>
+				<integer>27</integer>
 				<key>line</key>
-				<integer>18</integer>
+				<integer>13</integer>
 			</dict>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
@@ -280,12 +332,28 @@
 				<key>column</key>
 				<integer>0</integer>
 				<key>line</key>
-				<integer>2</integer>
+				<integer>12</integer>
 			</dict>
+			<key>columnSelection</key>
+			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
 			<integer>0</integer>
+			<key>selectFrom</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>2</integer>
+			</dict>
+			<key>selectTo</key>
+			<dict>
+				<key>column</key>
+				<integer>0</integer>
+				<key>line</key>
+				<integer>12</integer>
+			</dict>
 		</dict>
 		<key>Rcaline/inst/tests/test.Meteorology.R</key>
 		<dict>
@@ -322,30 +390,28 @@
 			<key>caret</key>
 			<dict>
 				<key>column</key>
-				<integer>32</integer>
+				<integer>0</integer>
 				<key>line</key>
-				<integer>3</integer>
+				<integer>8</integer>
 			</dict>
-			<key>columnSelection</key>
-			<false/>
 			<key>firstVisibleColumn</key>
 			<integer>0</integer>
 			<key>firstVisibleLine</key>
 			<integer>0</integer>
-			<key>selectFrom</key>
+		</dict>
+		<key>Rcaline/man/Receptors.Rd</key>
+		<dict>
+			<key>caret</key>
 			<dict>
 				<key>column</key>
 				<integer>0</integer>
 				<key>line</key>
-				<integer>3</integer>
+				<integer>0</integer>
 			</dict>
-			<key>selectTo</key>
-			<dict>
-				<key>column</key>
-				<integer>32</integer>
-				<key>line</key>
-				<integer>3</integer>
-			</dict>
+			<key>firstVisibleColumn</key>
+			<integer>0</integer>
+			<key>firstVisibleLine</key>
+			<integer>0</integer>
 		</dict>
 		<key>Rcaline/src/libcaline3.f</key>
 		<dict>
@@ -364,24 +430,19 @@
 	</dict>
 	<key>openDocuments</key>
 	<array>
-		<string>Rcaline/inst/tests/test.Caline3Model.R</string>
-		<string>Rcaline/R/S3-Receptors.R</string>
-		<string>Rcaline/inst/tests/test.Meteorology.R</string>
-		<string>Rcaline/R/S3-Caline3Model.R</string>
-		<string>Rcaline/src/libcaline3.f</string>
-		<string>Rcaline/DESCRIPTION</string>
-		<string>Rcaline/NAMESPACE</string>
-		<string>Rcaline/R/S3-Meteorology.R</string>
-		<string>Rcaline/R/CALINE3.predict.R</string>
-		<string>Rcaline/R/Rcaline.R</string>
-		<string>Rcaline/R/S3-Pollutant.R</string>
-		<string>Rcaline/inst/tests/test.Receptors.R</string>
-		<string>Rcaline/inst/tests/test.Links.R</string>
 		<string>Rcaline/R/S3-Links.R</string>
+		<string>Rcaline/data/SanFrancisco.R</string>
+		<string>Rcaline/R/S3-Meteorology.R</string>
+		<string>Rcaline/inst/tests/test.Caline3Model.R</string>
+		<string>Rcaline/R/S3-Caline3Model.R</string>
+		<string>Rcaline/R/S3-Parameters.R</string>
+		<string>Rcaline/R/S3-Receptors.R</string>
+		<string>Rcaline/NAMESPACE</string>
+		<string>Rcaline/man/Receptors.Rd</string>
 	</array>
 	<key>showFileHierarchyDrawer</key>
 	<true/>
 	<key>windowFrame</key>
-	<string>{{-1401, 100}, {983, 800}}</string>
+	<string>{{264, 4}, {893, 742}}</string>
 </dict>
 </plist>

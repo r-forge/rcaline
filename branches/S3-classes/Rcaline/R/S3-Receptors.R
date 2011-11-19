@@ -22,8 +22,8 @@ ReceptorGrid <- function(links, elevation=1.8, resolution=1000.0, maxDistance=10
 	buf <- rgeos::gBuffer(spgeom, width=maxDistance)
 	xy <- spsample(buf, cellsize = c(resolution, resolution), type = "regular")
 	coordnames(xy) <- c("x", "y")
-	spdf <- SpatialPointsDataFrame(xy, data=z)
-	return(Receptors(spdf, elevation=elevation))
+	spobj <- SpatialPoints(xy)
+	return(ReceptorSurface(spobj, elevation=elevation))
 }
 
 #' Construct a set of receptors in the vicinity of a set of links.
@@ -63,7 +63,7 @@ ReceptorRings <- function(links, elevation=1.8,
 		SpatialPointsDataFrame(pts, data.frame(distance = d, spacing = spacings))
 	}
 	spobj <- do.call(rbind, mapply(spsample.ring, rings, distances, spacings=spacing(distances)))
-	return(Receptors(spobj, elevation=elevation))
+	return(ReceptorSurface(spobj, elevation=elevation))
 }
 
 #' Read receptor locations from a shapefile layer.
@@ -87,19 +87,19 @@ ReceptorLocations <- function(x, elevation=1.8, ...) {
 	} else {
 		stop("I don't know what to do with a ", class(x))
 	}
-	return(Receptors(spobj, elevation=elevation))
+	return(ReceptorSurface(spobj, elevation=elevation))
 }
 
-#' Promote a SpatialPoints* object to a Receptors object.
+#' Promote a SpatialPoints* object to a ReceptorSurface object.
 #'
 #' @param spobj an object of class SpatialPoints or SpatialPointsDataFrame
 #' @param elevation elevation above ground, in meters
 #'
-#' @return object of class Receptors
+#' @return object of class ReceptorSurface
 #'
 #' @keywords receptors
 #' @export
-Receptors <- function(spobj, elevation) {
+ReceptorSurface <- function(spobj, elevation) {
 	stopifnot(inherits(spobj, "SpatialPoints"))
 	receptors <- spobj
 	coordnames(receptors) <- c("x", "y")

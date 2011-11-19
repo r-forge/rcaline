@@ -107,7 +107,7 @@ predict.Caline3Model <- function(object, .parallel, ...) {
 	return(hourly)
 }
 
-run.CALINE3 <- function(links, meteorology, receptors, parameters)
+run.CALINE3 <- function(links, meteorology, receptors, parameters) {
 	if(missing(parameters)) {
 		parameters = Parameters(surfaceRoughness = 80.0)
 		warning("Missing parameters. Defaults subsituted.")
@@ -119,7 +119,6 @@ run.CALINE3 <- function(links, meteorology, receptors, parameters)
 	class(hourly) <- c("HourlyConcentrations", "matrix")
 	attr(hourly, "model") <- model
 	return(hourly)
-	
 }
 
 #' Aggregate the "raw" result matrix obtained from \code{\link{predict.Caline3Model}},

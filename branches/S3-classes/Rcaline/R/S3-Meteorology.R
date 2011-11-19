@@ -43,14 +43,21 @@ ISCFile <- function(filename) {
 			"mixingHeight.rural", "mixingHeight.urban")
 	)
 	
-	if(all(obj$year < 100)) {
-		warning("Adding 1900 to two-digit years")
-		obj <- transform(obj, year = year + 1900)
-	}
+	if(all(obj$year < 70)) {
+		warning("Adding 2000 to two-digit years")
+		obj <- transform(obj, year = year + 2000)
+      } else if(all(obj$year < 100)) {
+      	warning("Adding 1900 to two-digit years")
+      	obj <- transform(obj, year = year + 1900)
+      }
 	
 	# FIXME put the header data here
 	attr(obj, "metadata") <- NA
 	
+	row.names(obj) <- with(obj,
+		as.POSIXlt(sprintf("%02d/%02d/%02d %02d:00:00", year, month, day, hour - 1))
+	)	
+      
 	class(obj) <- c("ISCFile", class(obj))
 	return(obj)
 
@@ -93,17 +100,15 @@ Meteorology <- function(iscfile, use = c("urban", "rural")) {
 			)
 		)
 	)
+	row.names(met) <- row.names(iscfile)
 
 	# Warn about calm wind speeds
-	with(met, {
-		calm <- which(windSpeed < 1)
-		if(length(calm) > 0)
-			warning(length(calm), " conditions with wind speed less than 1.0 m/s. These will produce NA's.")
-	})
+	calm <- which(met$windSpeed < 1)
+	if(length(calm) > 0) {
+		warning(length(calm), " wind speeds less than 1.0 m/s (will produce NAs)")
+		show(met[calm,])
+	}
 
-	row.names(met) <- with(iscfile,
-		as.POSIXlt(sprintf("%02d/%02d/%02d %02d:00:00", year, month, day, hour - 1))
-	)	
 	met <- within(met, {
 		units(windSpeed) <- "m/s"
 		units(windBearing) <- "deg"

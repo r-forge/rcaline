@@ -1,8 +1,8 @@
-\name{Receptors}
-\alias{Receptors}
-\title{Promote a SpatialPoints* object to a Receptors object.}
+\name{ReceptorSurface}
+\alias{ReceptorSurface}
+\title{Promote a SpatialPoints* object to a ReceptorSurface object.}
 \usage{
-  Receptors(spobj, elevation)
+  ReceptorSurface(spobj, elevation)
 }
 \arguments{
   \item{spobj}{an object of class SpatialPoints or
@@ -11,10 +11,10 @@
   \item{elevation}{elevation above ground, in meters}
 }
 \value{
-  object of class Receptors
+  object of class ReceptorSurface
 }
 \description{
-  Promote a SpatialPoints* object to a Receptors object.
+  Promote a SpatialPoints* object to a ReceptorSurface object.
 }
 \keyword{receptors}
 
