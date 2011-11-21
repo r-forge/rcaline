@@ -9,7 +9,7 @@
 #' LinkType(rep('AG', 5))
 Pasquill <- function(x) {
 	obj <- ordered(x, levels=1:7, labels=LETTERS[1:7])
-	#class(obj) <- "Pasquill"
+	class(obj) <- c('Pasquill', 'ordered')
 	return(obj)
 }
 
@@ -76,21 +76,24 @@ ISCFile <- function(filename) {
 #'
 #' @keywords meteorology
 #' @export
-Meteorology <- function(iscfile, use = c("urban", "rural")) {
+Meteorology <- function(x, ...) UseMethod("Meteorology")
+Meteorology.data.frame <- function(x) {
+	stopifnot(identical(names(x),
+		c('windSpeed', 'windBearing', 'stabilityClass', 'mixingHeight')))
+	class(x) <- c('Meteorology', 'data.frame')
+	return(x)
+}
+Meteorology.ISCFile <- function(x, use = c("urban", "rural")) {
 
 	# Determine whether to use urban or rural mixing heights column
 	use <- match.arg(use)
 	message("Using ", use, " mixing heights (See ?Meteorology for more).")
 	
-	# Load ISC file
-	if(!inherits(iscfile, "ISCFile")) 
-		iscfile <- ISCFile(iscfile)
-
 	# Rotate flow vector by 180 to get wind bearing;
 	# Convert stability classes to Pasquill;
 	# Discard rural or urban mixing height (depending on user's preference)
 	rotate.degrees <- function(angle, by) ((angle + by) + 360) %% 360
-	met <- with(iscfile, data.frame( 
+	met <- with(x, data.frame( 
 			windSpeed = windSpeed, 
 			windBearing = rotate.degrees(flowVector, by = 180.0),
 			stabilityClass = Pasquill(stabilityClass),
@@ -100,7 +103,7 @@ Meteorology <- function(iscfile, use = c("urban", "rural")) {
 			)
 		)
 	)
-	row.names(met) <- row.names(iscfile)
+	row.names(met) <- row.names(x)
 
 	# Warn about calm wind speeds
 	calm <- which(met$windSpeed < 1)
@@ -135,3 +138,16 @@ plot.Meteorology <- function(x, ...) {
 	p <- p + scale_x_continuous(limits=c(0,360), breaks=seq(0, 360, by=45))
 	return(p + coord_polar(theta='x'))
 }
+
+as.Fortran.Meteorology <- function(x) {
+	dat <- as.data.frame(x)
+	with(dat, list(	
+		UM = real4(windSpeed),
+		BRGM = real4(windBearing),
+		CLASM = as.integer(pmin(stabilityClass, Pasquill(6))),
+		MIXHM = real4(mixingHeight)
+	))
+}
+
+setOldClass("Meteorology")
+setMethod("as.Fortran", "Meteorology", as.Fortran.Meteorology)

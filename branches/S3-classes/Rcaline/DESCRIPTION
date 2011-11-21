@@ -13,7 +13,8 @@ Depends:
     rgeos,
     multicore,
     doMC,
-    foreach
+    foreach,
+	zoo
 Suggests:
     maptools,
     automap
@@ -30,20 +31,21 @@ References: Benson, P. (1979) CALINE-3: A versatile
     near highways and urban streets. Federal Highway
     Authority report FHWA/CA/TL-79/23, California DOT,
     Sacramento (1979).
-Collate:
+Collate:	
+    'Rcaline-internal.R'
+    'Rcaline.R'
+    'utils.R'
     'as.segments.R'
     'as.SpatialLines.R'
     'CALINE3.predict.R'
     'decimate.R'
-    'Rcaline-internal.R'
-    'Rcaline.R'
     'read.ISC.R'
-    'S3-Caline3Model.R'
+    'S3-FortranArrays.R'
     'S3-Links.R'
     'S3-Meteorology.R'
-    'S3-Pollutant.R'
     'S3-Receptors.R'
-    'utils.R'
-    'S3-FortranArrays.R'
-    'S3-Methods.R'
+    'S3-Pollutant.R'
     'S3-Parameters.R'
+	'S3-Terrain.R'
+    'S3-Caline3Model.R'
+    'S3-Methods.R'

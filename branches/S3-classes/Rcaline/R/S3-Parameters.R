@@ -18,3 +18,14 @@ Parameters <- function(surfaceRoughness, averagingTime=60.0, settlingVelocity=0.
     class(obj) <- "Parameters"
     return(obj)
 }
+
+as.Fortran.Parameters <- function(x) {
+	dat <- as.data.frame.list(x)
+	with(dat, list(
+		VS = real4(settlingVelocity),
+		VD = real4(depositionVelocity)
+	))
+}
+
+setOldClass("Parameters")
+setMethod("as.Fortran", "Parameters", as.Fortran.Parameters)

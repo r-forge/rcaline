@@ -101,10 +101,30 @@ ReceptorLocations <- function(x, elevation=1.8, ...) {
 #' @export
 ReceptorSurface <- function(spobj, elevation) {
 	stopifnot(inherits(spobj, "SpatialPoints"))
-	receptors <- spobj
-	coordnames(receptors) <- c("x", "y")
-	attr(receptors, "elevation") <- elevation
-	return(receptors)
+	rcp <- spobj
+	coordnames(rcp) <- c("x", "y")
+	attr(rcp, "elevation") <- elevation
+	return(rcp)
 }
 
+Receptors <- function(x, y, z, rownames) {
+	coords <- cbind(x, y)
+	dat <- data.frame(z=rep(z, len=nrow(coords)))
+	spdf <- SpatialPointsDataFrame(coords, data=dat)
+	if(missing(rownames)) {
+		rownames <- paste('RECP.', row.names(spdf))
+	}
+	row.names(spdf) <- rownames
+	return(spdf)
+}
+
+as.Fortran.Receptors <- function(x) {
+	dat <- as.data.frame(x)
+	if(!('z' %in% names(dat))) {
+		dat$z <- attr(x, "elevation")
+	}
+	with(dat, list(XR=real4(x), YR=real4(y), ZR=real4(z)))
+}
+
+setMethod("as.Fortran", "SpatialPoints", as.Fortran.Receptors)
 

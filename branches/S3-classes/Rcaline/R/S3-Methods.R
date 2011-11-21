@@ -1,88 +1,40 @@
-#' Convert a FreeFlowLinks object to a data.frame.
-#'
-#' Each row in the data.frame corresponds to one or more segments from
-#' the original (polyline) geometry. The starting coordinates (XL1, YL1)
-#' and ending coordinates (XL2, YL2) are preserved as columns in the data.frame. 
-#' Attributes are also preserved as columns.
-#'
-#' @param x a FreeFlowLinks object
-#' @param row.names TODO
-#' @param optional TODO
-#' @param ... other arguments
-#' 
-#' @return a data.frame
-#' @keywords links
-#' @export
-as.data.frame.FreeFlowLinks <- function(x, row.names, optional, ...) {
-	try({
-		.data <- attr(x, ".data")
-		if(!is.null(.data))
-			return(.data)
-	})
-	links <- x
-	segments <- decimate(centerlines(links))
-	colnames(segments) <- c("XL1", "YL1", "XL2", "YL2")
-	attrs <- do.call("transform", c(list(centerlines(links)@data), links$transformArgs))
-	dat <- suppressWarnings(merge(segments, attrs, by="row.names"))
-	colnames(dat)[colnames(dat) == "Row.names"] <- "ID"
-	return(dat)
+spplot.AggregatedConcentrations <- function(x, ...) {
+	spdf <- as(x, 'SpatialPointsDataFrame')
+	spplot(spdf, ...)
 }
 
-as.Fortran <- function(x, ...) UseMethod("as.Fortran", x)
-setGeneric("as.Fortran")
-
-as.Fortran.FreeFlowLinks <- function(x) {
-	dat <- as.data.frame(x)
-	with(dat, list(
-		XL1 = real4(XL1),
-		YL1 = real4(YL1),
-		XL2 = real4(XL2),
-		YL2 = real4(YL2),
-		WL = real4(width),
-		HL = real4(height),
-		TYP = as.character(classification),
-		VPHL = real4(vehiclesPerHour),
-		EFL = real4(emissionFactor)
-	))
+ggplot.Caline3Model <- function(x, ...) {
+	receptor.data <- as.data.frame(x$receptors)
+	link.data <- as.data.frame(x$links)
+	receptor.layer <- geom_point(aes(x=x, y=y), pch=3, alpha=0.5, data=receptor.data)
+	link.layer <- geom_segment(aes(x=XL1, y=YL1, xend=XL2, yend=YL2), data=link.data)
+	base.layer <- ggplot() + coord_equal() + easting() + northing()
+	return(base.layer + link.layer + receptor.layer)
 }
 
-setOldClass("FreeFlowLinks")
-setMethod("as.Fortran", "FreeFlowLinks", as.Fortran.FreeFlowLinks)
-
-as.Fortran.Meteorology <- function(x) {
-	dat <- as.data.frame(x)
-	with(dat, list(	
-		UM = real4(windSpeed),
-		BRGM = real4(windBearing),
-		CLASM = as.integer(pmin(stabilityClass, Pasquill(6))),
-		MIXHM = real4(mixingHeight)
-	))
+ggplot.AggregatedConcentrations <- function(x, select=NA, ...) {
+	model <- attr(x, 'model')
+	map <- ggplot(model)
+	results.spatial <- as(x, 'SpatialPointsDataFrame')
+	results.data <- as.data.frame(results.spatial)
+	if(is.na(select)) {
+		results.geom <- geom_point(
+			aes(x=x, y=y, fill=mean, color=mean, size=mean, order=mean))
+		map %+% results.data + results.geom
+	} else {
+		varnames <- names(results.spatial@data)
+		results.wide <- results.data[,c('x', 'y', select)]
+		results.long <- reshape(results.wide,
+			idvar = c('x', 'y'),
+			varying = list(select),
+			times = select,
+			timevar = 'Variable',
+			v.names = 'Value',
+			direction = 'long')
+		results.geom <- geom_point(
+			aes(x=x, y=y, fill=Value, color=Value, size=Value, order=Value))
+		map %+% results.long + results.geom + facet_wrap(~ Variable, ...)
+	}
 }
-
-setOldClass("Meteorology")
-setMethod("as.Fortran", "Meteorology", as.Fortran.Meteorology)
-
-as.Fortran.Receptors <- function(x) {
-	dat <- as.data.frame(x)
-	elev <- attr(x, "elevation")
-	with(dat, list(
-		XR = real4(x),
-		YR = real4(y),
-		ZR = real4(rep(elev, nrow(dat)))
-	))
-}
-
-setMethod("as.Fortran", "SpatialPoints", as.Fortran.Receptors)
-
-as.Fortran.Parameters <- function(x) {
-	dat <- as.data.frame(x)
-	with(dat, list(
-		ATIM = real4(averagingTime),
-		Z0 = real4(surfaceRoughness),
-		VS = real4(settlingVelocity),
-		VD = real4(depositionVelocity)
-	))
-}
-
-setOldClass("Parameters")
-setMethod("as.Fortran", "Parameters", as.Fortran.Parameters)
+	
+# scale_fill_gradient2(low="yellow", mid="orange", high="brown") + scale_alpha(to=c(0.0, 0.8)))

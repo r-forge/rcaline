@@ -15,3 +15,10 @@ FortranArrays <- function(as.real=as.single, ...) {
 	class(obj) <- "FortranArrays"
     return(obj)
 }
+
+as.Fortran <- function(x, ...) UseMethod("as.Fortran", x)
+setGeneric("as.Fortran")
+
+#as.Fortran.data.frame <- function(x, ...) {
+#	return(cbind(apply(x, 1, real4)))
+#}

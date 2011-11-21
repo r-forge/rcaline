@@ -1,48 +1,68 @@
+links <- function(model, ...) UseMethod("links")
+links.default <- function(model, ...) model$links
+
+receptors <- function(model, ...) UseMethod("receptors")
+receptors.default <- function(model, ...) {
+	rcp <- model$receptors
+	expect_true(identical(coordnames(rcp), c("x", "y")))
+	return(rcp)
+}
+
+meteorology <- function(model, ...) UseMethod("meteorology")
+meteorology.default <- function(model, ...) model$meteorology
+
+pollutant <- function(model, ...) UseMethod("pollutant")
+pollutant.default <- function(model, ...) model$pollutant
+
+terrain <- function(model, ...) UseMethod("terrain")
+terrain.default <- function(model, ...) model$terrain
+
 #' Construct a Caline3Model object.
 #'
-#' The model (object) contains all of the link and meteorology data,
+#' The model (object) contains all of the link and met data,
 #' as well as site-specific model parameters, such as surface roughness.
 #'
 #' Internally, these are stored as single-precision arrays. If you want to
 #' experiment by changing a parameter, construct a new Caline3Model, unless 
 #' you really know what you are doing.
 #'
-#' Use \code{\link{predict.Caline3Model}} to predict concentrations at a given set of receptors.
+#' Use \code{\link{predict.Caline3Model}} to predict concentrations at a given set of rcp.
 #'
-#' @param links a \code{\link{FreeFlowLinks}} object
-#' @param meteorology a \code{\link{Meteorology}} object
-#' @param surfaceRoughness defaults to 300.0 (semi-urban); values between 0-400 cm are sane.
-#' @param averagingTime in minutes
-#' @param settlingVelocity of the modeled pollutant
-#' @param depositionVelocity of the modeled pollutant
+#' @param lnk a \code{\link{FreeFlowLinks}} object
+#' @param met a \code{\link{Meteorology}} object
+#' @param rcp a \code{\link{Receptors}} object
+#' @param ter a \code{\link{Terrain}} object
+#' @param pollutant a \code{\link{Pollutant}} object
 #' 
 #' @return a Caline3Model object
 #' 
 #' @keywords model
 #' @seealso predict.Caline3Model HourlyConcentrations AggregatedConcentrations
 #' @export
-Caline3Model <- function(links, meteorology, receptors, parameters) {
+Caline3Model <- function(links, meteorology, receptors, terrain, pollutant) {
 	stopifnot(inherits(links, "FreeFlowLinks"))
 	stopifnot(inherits(meteorology, "Meteorology"))
-	#stopifnot(inherits(receptors, "Receptors"))	
-	stopifnot(inherits(parameters, "Parameters"))
+	stopifnot(inherits(receptors, "SpatialPoints"))	
+	stopifnot(inherits(terrain, "Terrain"))	
+	stopifnot(inherits(pollutant, "Pollutant"))
 	obj <- list(
 		links = links,
 		meteorology = meteorology,
 		receptors = receptors,
-		parameters = parameters)
+		terrain = terrain,
+		pollutant = pollutant)
 	class(obj) <- "Caline3Model"
 	return(obj)
 }
 
-#' Use a Caline3Model to predict concentrations at a given set of receptors.
+#' Use a Caline3Model to predict concentrations at a given set of rcp.
 #'
 #' Returns "raw" estimates in the form of a matrix. Each row corresponds to a receptor,
 #' and each column to a meteorological condition. Use \code{aggregate()}
 #' on the result to obtain summary statistics for each receptor: mean, max, etc.
 #'
 #' @param object a \code{\link{Caline3Model}} object
-#' @param receptors created with \code{\link{ReceptorRings}} or \code{\link{ReceptorGrid}}
+#' @param rcp created with \code{\link{ReceptorRings}} or \code{\link{ReceptorGrid}}
 #' @param .parallel logical; attempt to use the \code{foreach} package to exploit multiple cores or hosts?
 #' @param ... other arguments
 #'
@@ -52,13 +72,15 @@ Caline3Model <- function(links, meteorology, receptors, parameters) {
 #' @S3method predict Caline3Model
 #' @importFrom stats predict
 #' @export
-predict.Caline3Model <- function(object, .parallel, ...) {
+predict.Caline3Model <- function(object, .parallel=TRUE, ...) {
 	
-	links <- object$links
-	receptors <- object$receptors
-	meteorology <- object$meteorology
-	parameters <- object$parameters
-
+	stopifnot(inherits(object, 'Caline3Model'))
+	lnk <- links(object)
+	met <- meteorology(object)
+	rcp <- receptors(object)
+	ter <- terrain(object)
+	pol <- pollutant(object)
+	
 	# Default to sequential processing
 	if(missing(.parallel)) 
 		.parallel <- FALSE
@@ -71,12 +93,10 @@ predict.Caline3Model <- function(object, .parallel, ...) {
 	}
 	
 	# This should be quick
-	NR <- nrow(as.data.frame(receptors))
-	NM <- nrow(as.data.frame(meteorology))
-	NL <- nrow(as.data.frame(links))
-	
-	# Should be fixed
-	expect_true(identical(coordnames(receptors), c("x", "y")))
+	# TODO: split by receptors or meteorology, whichever is greater
+	NR <- nrow(as.data.frame(rcp))
+	NM <- nrow(as.data.frame(met))
+	NL <- nrow(as.data.frame(lnk))
 	
 	if(.parallel == TRUE) {
 	
@@ -87,47 +107,69 @@ predict.Caline3Model <- function(object, .parallel, ...) {
 		registerDoMC(cores=n.cores)
 	
 		if(NR > NM) {
-			# Split by receptors
+			# Split by rcp
 			k <- sort(rep(1:n.cores, length.out=NR))
-			jobs <- suppressWarnings(split(receptors, k))
-			hourly <- foreach(receptors=iter(jobs), .combine=rbind) %dopar% 
-				run.CALINE3(links, meteorology, receptors, parameters)
+			jobs <- suppressWarnings(split(rcp, k))
+			pred <- foreach(rcp=iter(jobs), .combine=rbind) %dopar% 
+				run.CALINE3(lnk, met, rcp, ter, pol)
 		} else {
-			# Split by hourly conditions
+			# Split by pred conditions
 			k <- sort(rep(1:n.cores, length.out=NM))
-			jobs <- suppressWarnings(split(meteorology, k))
-			hourly <- foreach(meteorology=iter(jobs), .combine=cbind) %dopar% 
-				run.CALINE3(links, meteorology, receptors, parameters)
+			jobs <- suppressWarnings(split(met, k))
+			pred <- foreach(met=iter(jobs), .combine=cbind) %dopar% 
+				run.CALINE3(lnk, met, rcp, ter, pol)
 		}
 		
 	} else {
-		hourly <- run.CALINE3(links, meteorology, receptors, parameters)
+		pred <- run.CALINE3(lnk, met, rcp, ter, pol)
 	}	
 
-	return(hourly)
+	attr(pred, "model") <- object
+	return(pred)
 }
 
-run.CALINE3 <- function(links, meteorology, receptors, parameters) {
-	if(missing(parameters)) {
-		parameters = Parameters(surfaceRoughness = 80.0)
-		warning("Missing parameters. Defaults subsituted.")
+run.CALINE3 <- function(lnk, met, rcp, ter, pol) {
+	
+	# Initialize the full matrix
+	pred <- matrix(NA, 
+		nrow = nrow(rcp), ncol = nrow(met), 
+		dimnames = list(rownames(rcp), rownames(met)))	
+	
+	# Compute only the conditions (columns) for which wind speed >= 1.0
+	non.calm <- with(met, which(windSpeed >= 1.0))
+	args <- c(
+		as.Fortran(lnk), 
+		as.Fortran(met[non.calm,]), 
+		as.Fortran(rcp),
+		list(
+			ATIM = real4(60.0),
+			Z0 = real4(ter$surfaceRoughness),
+			VS = real4(pol$settlingVelocity),
+			VD = real4(pol$depositionVelocity)))
+	computed <- do.call(".caline3.receptor_totals", args)
+	
+	# Assign the computed estimates back to the matrix
+	stopifnot(nrow(computed) == nrow(pred))
+	stopifnot(ncol(computed) == length(non.calm))
+	pred[,non.calm] <- computed
+	
+	MOWT <- pol$molecularWeight
+	if(!is.na(MOWT)) {
+		FPPM <- 0.0245 / MOWT
+		pred <- pred * FPPM 
 	}
-	fortranArgs <- sapply(c(links, meteorology, receptors, parameters), as.Fortran)
-	hourly <- do.call(".caline3.receptor_totals", fortranArgs)
-	rownames(hourly) <- rownames(receptors)
-	colnames(hourly) <- rownames(meteorology)
-	class(hourly) <- c("HourlyConcentrations", "matrix")
-	attr(hourly, "model") <- model
-	return(hourly)
+	
+	class(pred) <- c("HourlyConcentrations", "matrix")
+	return(pred)
 }
 
 #' Aggregate the "raw" result matrix obtained from \code{\link{predict.Caline3Model}},
-#' summarizing the hourly estimates for each receptor. 
+#' summarizing the pred estimates for each receptor. 
 #'
 #' Use \code{as(x, "SpatialPointsDataFrame")} to re-bind these summary statistics 
-#' with the locations (and other attributes) of the receptors used in the prediction step.
+#' with the locations (and other attributes) of the rcp used in the prediction step.
 #'
-#' @param x hourly concentrations obtained from \code{\link{predict.Caline3Model}}
+#' @param x pred concentrations obtained from \code{\link{predict.Caline3Model}}
 #' @param FUN a list of summary functions to apply to each receptor
 #' @param na.rm logical; passed to each summary function in turn
 #' @param ... other arguments
@@ -138,15 +180,13 @@ run.CALINE3 <- function(links, meteorology, receptors, parameters) {
 #' @importFrom stats aggregate
 #' @export
 aggregate.HourlyConcentrations <- function(x, FUN=list("min", "mean", "median", "GM", "max", "sd"), na.rm=T, ...) {
-	hourly <- x
+	pred <- x
 	GM <- function(x, ...) exp(mean(log(x), ...))
-	agg <- do.call(cbind, lapply(FUN, function(f) apply(hourly, 1, f, na.rm=na.rm)))
+	agg <- do.call(cbind, lapply(FUN, function(f) apply(pred, MARGIN=1, FUN=f, na.rm=na.rm)))
 	colnames(agg) <- FUN
-	rownames(agg) <- rownames(hourly)
-	units(agg) <- units(hourly)
+	rownames(agg) <- rownames(pred)
 	class(agg) <- c("AggregatedConcentrations", "matrix")
-	attr(agg, "model") <- attr(hourly, "model")
-	attr(agg, "receptors") <- attr(hourly, "receptors")
+	attr(agg, "model") <- attr(pred, "model")
 	return(agg)
 }
 
@@ -162,14 +202,15 @@ setOldClass("AggregatedConcentrations")
 #' @keywords predict model
 #' @export
 setAs("AggregatedConcentrations", "SpatialPointsDataFrame", function(from) {
-	receptors <- attr(from, "receptors")
-	if("data" %in% slotNames(receptors)) {
-		dat <- data.frame(receptors@data, as.data.frame(from))
+	model <- attr(from, 'model')
+	rcp <- model$rcp
+	if("data" %in% slotNames(rcp)) {
+		dat <- data.frame(rcp@data, as.data.frame(from))
 	} else {
 		dat <- as.data.frame(from)
 	}
-	spdf <- SpatialPointsDataFrame(coordinates(receptors), data=dat)
-	proj4string(spdf) <- proj4string(receptors)
+	spdf <- SpatialPointsDataFrame(coordinates(rcp), data=dat)
+	proj4string(spdf) <- proj4string(rcp)
 	return(spdf)
 })
 

@@ -19,3 +19,6 @@ Pollutant <- function(name, molecularWeight, settlingVelocity=0.0, depositionVel
       class(obj) <- "Pollutant"
       return(obj)
 }
+
+CO <- Pollutant("CO", molecularWeight=28.0)
+PM <- Pollutant("PM25", molecularWeight=NA)

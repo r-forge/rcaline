@@ -34,13 +34,13 @@ LinkType <- function(x) {
 #' @return a FreeFlowLinks object
 #' @keywords links
 #' @export
-FreeFlowLinks <- function(x, vehiclesPerHour, emissionFactor, width=30.0, height=0.0, classification='AG', ...) 
+FreeFlowLinks <- function(x, vehiclesPerHour, emissionFactor, width, height=0.0, classification='AG', ...) 
 {
-	if(missing(vehiclesPerHour))
-		stop("vehiclesPerHour must be specified")
-		
-	if(missing(emissionFactor))
-		stop("emissionFactor must be specified")
+	if(missing(height))
+		height <- 0.0
+	
+	if(missing(classification))
+		classification <- 'AG'
 		
 	if(is(x, "character")) {
 		filename <- x
@@ -57,8 +57,12 @@ FreeFlowLinks <- function(x, vehiclesPerHour, emissionFactor, width=30.0, height
 	obj <- list()
 	class(obj) <- "FreeFlowLinks"
 	obj$centerlines <- sldf
-	obj$transformArgs <- c(formalArgs[-1], list(width=width, height=height, classification=classification))
-
+	obj$transformArgs <- formalArgs[-1]
+	if(is.null(obj$transformArgs$height))
+		 obj$transformArgs$height = height
+	if(is.null(obj$transformArgs$classification))
+		 obj$transformArgs$classification = classification
+	
 	# Precompute the segments
 	attr(obj, ".data") <- as.data.frame(obj)
 	
@@ -118,3 +122,51 @@ plot.FreeFlowLinks <- function(x, ...) {
 	return(map + centerlines + scale_color_gradient2(expression(bold(Q) ~~ bgroup("(", over(g, mi %.% hr), ")")), 
 		low="green", mid="yellow", high="red", midpoint=median(dat$Q)))
 }
+
+#' Convert a FreeFlowLinks object to a data.frame.
+#'
+#' Each row in the data.frame corresponds to one or more segments from
+#' the original (polyline) geometry. The starting coordinates (XL1, YL1)
+#' and ending coordinates (XL2, YL2) are preserved as columns in the data.frame. 
+#' Attributes are also preserved as columns.
+#'
+#' @param x a FreeFlowLinks object
+#' @param row.names TODO
+#' @param optional TODO
+#' @param ... other arguments
+#' 
+#' @return a data.frame
+#' @keywords links
+#' @export
+as.data.frame.FreeFlowLinks <- function(x, row.names, optional, ...) {
+	try({
+		.data <- attr(x, ".data")
+		if(!is.null(.data))
+			return(.data)
+	})
+	links <- x
+	segments <- decimate(centerlines(links))
+	colnames(segments) <- c("XL1", "YL1", "XL2", "YL2")
+	attrs <- do.call("transform", c(list(centerlines(links)@data), links$transformArgs))
+	dat <- suppressWarnings(merge(segments, attrs, by="row.names"))
+	colnames(dat)[colnames(dat) == "Row.names"] <- "ID"
+	return(dat)
+}
+
+as.Fortran.FreeFlowLinks <- function(x) {
+	dat <- as.data.frame(x)
+	with(dat, list(
+		XL1 = real4(XL1),
+		YL1 = real4(YL1),
+		XL2 = real4(XL2),
+		YL2 = real4(YL2),
+		WL = real4(width),
+		HL = real4(height),
+		TYP = as.character(classification),
+		VPHL = real4(vehiclesPerHour),
+		EFL = real4(emissionFactor)
+	))
+}
+
+setOldClass("FreeFlowLinks")
+setMethod("as.Fortran", "FreeFlowLinks", as.Fortran.FreeFlowLinks)
