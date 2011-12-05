@@ -1,6 +1,7 @@
 \docType{package}
 \name{Rcaline}
 \alias{Rcaline}
+\alias{Rcaline-package}
 \title{Rcaline}
 \description{
   Rcaline provides an interface to Fortran implementations

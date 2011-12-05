@@ -1,6 +1,6 @@
 \name{Pasquill}
 \alias{Pasquill}
-\title{Create a vector of atmospheric stability classes.}
+\title{Pasquill}
 \usage{
   Pasquill(x)
 }
@@ -8,7 +8,7 @@
   \item{x}{TODO}
 }
 \description{
-  Basically a restricted kind of \code{\link{factor}}.
+  Construct a vector of atmospheric stability classes.
 }
 \examples{
 LinkType(rep('AG', 5))

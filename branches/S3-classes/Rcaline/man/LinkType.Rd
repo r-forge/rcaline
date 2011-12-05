@@ -1,6 +1,6 @@
 \name{LinkType}
 \alias{LinkType}
-\title{Create a vector of link classifications.}
+\title{LinkType}
 \usage{
   LinkType(x)
 }
@@ -8,7 +8,7 @@
   \item{x}{TODO}
 }
 \description{
-  Basically a restricted kind of \code{\link{factor}}.
+  Create a vector of link classifications.
 }
 \examples{
 LinkType(rep('AG', 5))

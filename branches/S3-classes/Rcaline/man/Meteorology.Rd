@@ -1,22 +1,30 @@
 \name{Meteorology}
 \alias{Meteorology}
-\title{Load meteorological data into memory.}
+\alias{Meteorology.character}
+\alias{Meteorology.data.frame}
+\alias{Meteorology.ISCFile}
+\title{Meteorology}
 \usage{
-  Meteorology(iscfile, use = c("urban", "rural"))
+  Meteorology(x, ...)
+
+  Meteorology.data.frame(x)
+
+  Meteorology.character(x)
+
+  Meteorology.ISCFile(x, use = c("urban", "rural"))
 }
 \arguments{
-  \item{iscfile}{filename or ISCFile object}
+  \item{x}{a filename, \link{ISCFile} object, or
+  data.frame}
 
   \item{use}{whether to use urban or rural mixing heights}
 }
 \value{
-  a Meteorology object (basically a \code{data.frame})
+  a Meteorology object (essentially a \link{data.frame})
 }
 \description{
-  Compatible with ISC-format files. Rotates the "flow
-  vector" (wind direction) from ISC-format files by 180
-  degrees to obtain the wind bearing. Defaults to retaining
-  the urban mixing heights only.
+  Construct a Meteorology object, generally from a file
+  containing ISC-formatted records.
 }
 \keyword{meteorology}
 

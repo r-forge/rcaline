@@ -1,6 +1,6 @@
 \name{as.data.frame.FreeFlowLinks}
 \alias{as.data.frame.FreeFlowLinks}
-\title{Convert a FreeFlowLinks object to a data.frame.}
+\title{as.data.frame}
 \usage{
   as.data.frame.FreeFlowLinks(x, row.names, optional, ...)
 }
@@ -17,6 +17,9 @@
   a data.frame
 }
 \description{
+  Convert a FreeFlowLinks object to a data.frame.
+}
+\details{
   Each row in the data.frame corresponds to one or more
   segments from the original (polyline) geometry. The
   starting coordinates (XL1, YL1) and ending coordinates

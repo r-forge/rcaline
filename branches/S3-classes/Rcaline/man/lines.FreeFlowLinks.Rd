@@ -1,6 +1,6 @@
 \name{lines.FreeFlowLinks}
 \alias{lines.FreeFlowLinks}
-\title{Plot a FreeFlowLinks object using base graphics.}
+\title{lines}
 \usage{
   lines.FreeFlowLinks(x, ...)
 }
@@ -10,7 +10,7 @@
   \item{...}{other arguments}
 }
 \description{
-  Works just like \code{\link{lines}}.
+  Plot a FreeFlowLinks object.
 }
 \keyword{links}
 

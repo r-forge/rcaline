@@ -1,43 +1,44 @@
 \name{Caline3Model}
 \alias{Caline3Model}
-\title{Construct a Caline3Model object.}
+\title{Modeling}
 \usage{
-  Caline3Model(links, meteorology, receptors, parameters)
+  Caline3Model(links, meteorology, receptors, terrain,
+    pollutant)
 }
 \arguments{
   \item{links}{a \code{\link{FreeFlowLinks}} object}
 
   \item{meteorology}{a \code{\link{Meteorology}} object}
 
-  \item{surfaceRoughness}{defaults to 300.0 (semi-urban);
-  values between 0-400 cm are sane.}
+  \item{receptors}{a \code{\link{Receptors}} object}
 
-  \item{averagingTime}{in minutes}
+  \item{terrain}{a \code{\link{Terrain}} object}
 
-  \item{settlingVelocity}{of the modeled pollutant}
-
-  \item{depositionVelocity}{of the modeled pollutant}
+  \item{pollutant}{a \code{\link{Pollutant}} object}
 }
 \value{
   a Caline3Model object
 }
 \description{
-  The model (object) contains all of the link and
-  meteorology data, as well as site-specific model
-  parameters, such as surface roughness.
+  Construct, run, summarize and show results from a
+  Caline3Model object.
 }
 \details{
-  Internally, these are stored as single-precision arrays.
-  If you want to experiment by changing a parameter,
-  construct a new Caline3Model, unless you really know what
-  you are doing.
+  The model (object) contains all of the link and met data,
+  as well as site-specific model parameters, such as
+  surface roughness. Internally, these are stored as
+  single-precision arrays. If you want to experiment by
+  changing a parameter, construct a new Caline3Model,
+  unless you really know what you are doing.
 
-  Use \code{\link{predict.Caline3Model}} to predict
-  concentrations at a given set of receptors.
+  Use \code{predict} to predict concentrations;
+  \code{aggregate} to compute summary statistics, such as
+  means and maxima; and \code{spplot} or \code{ggplot} to
+  visualize results.
 }
-\seealso{
-  predict.Caline3Model HourlyConcentrations
-  AggregatedConcentrations
-}
+\keyword{aggregate}
+\keyword{ggplot2}
 \keyword{model}
+\keyword{predict}
+\keyword{spplot}
 

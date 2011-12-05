@@ -3,7 +3,7 @@
 \title{Construct a Pollutant object.}
 \usage{
   Pollutant(name, molecularWeight, settlingVelocity = 0,
-  depositionVelocity = 0)
+    depositionVelocity = 0)
 }
 \arguments{
   \item{name}{TODO}

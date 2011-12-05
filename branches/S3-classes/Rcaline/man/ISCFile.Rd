@@ -1,6 +1,6 @@
 \name{ISCFile}
 \alias{ISCFile}
-\title{Read a file in ISC format.}
+\title{ISCFile}
 \usage{
   ISCFile(filename)
 }
@@ -8,11 +8,14 @@
   \item{filename}{filename}
 }
 \value{
-  an ISCFile object
+  an ISCFile object (essentially a \link{data.frame})
 }
 \description{
-  Use \code{\link{Meteorology}} to get meteorology in the
-  format required by CALINE3.
+  Read records from a file in ISC format.
+}
+\details{
+  NOTE: Rotates the "flow vector" (wind direction) column
+  by 180 degrees to obtain the wind bearing.
 }
 \keyword{meteorology}
 
