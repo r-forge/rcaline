@@ -1,0 +1,190 @@
+% \VignetteIndexEntry{Rcaline: Modeling traffic-related pollution with R and the CALINE3 dispersion model} 
+% \VignetteKeyword{Rcaline}
+% \VignetteKeyword{CALINE}
+% \VignetteKeyword{CALINE3}
+
+\documentclass[a4paper]{article}
+
+\title{Example: San Francisco}
+\author{David Holstius}
+\bibliographystyle{plain}
+
+\usepackage[pdftex]{graphicx}
+\usepackage{hyperref}
+\usepackage{subfig}
+
+\begin{document}
+
+\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=1em} \DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=1em} \DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=1em} \fvset{listparameters={\setlength{\topsep}{0pt}}} \renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
+
+\setkeys{Gin}{width=0.95\textwidth}
+
+<<echo=false>>=
+options(width=60, continue=" ")
+options(SweaveHooks=list(fig=function() par(mar=c(5.1, 4.1, 1.1, 2.1))))
+@
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\Rvar}[1]{\texttt{#1}}
+\newcommand{\Rfunc}[1]{\texttt{#1}}
+\newcommand{\pkg}[1]{\texttt{#1}}
+
+<<echo=FALSE>>= 
+options(
+	width=60, 
+	continue=" ", 
+	SweaveHooks=list(fig=function() par(mar=c(3, 1, 1, 1)+0.1))
+	)
+@
+
+\SweaveOpts{width=7,height=5}
+
+
+\maketitle
+
+\section{Introduction}
+
+Here we apply \pkg{Rcaline} to San Francisco data provided by the Bay Area Air Quality Management District (BAAQMD). 
+
+Both the traffic data and the meteorological data have already been imported (from ESRI shapefile and ISC formats, respectively). To learn about importing spatial data and meteorological data for use with Rcaline, please consult the accompanying vignette, ``Importing Data for use with Rcaline''.
+
+\section{Constructing the model}
+
+There are three data objects provided: an \code{ISCFile} object, with hourly meteorological records; a \code{SpatialPolygonsDataFrame} object, representing the extent of San Francisco county; and a \code{SpatialLinesDataFrame} object, which describes the roadway geometry and the Annual Average Daily Traffic (AADT). 
+
+<<package_data>>=
+require(Rcaline)
+data(SanFrancisco, package='Rcaline')
+ls()
+@
+
+\begin{figure}
+  \centering
+  \subfloat[Meteorology]{\label{fig:meteorology}\includegraphics[width=0.5\textwidth]{SanFrancisco-meteorology}}                
+  \subfloat[Highway network]{\label{fig:links}\includegraphics[width=0.5\textwidth]{SanFrancisco-links}}
+  \caption{San Francisco data included with the \pkg{Rcaline} package.}
+  \label{fig:data}
+\end{figure}
+
+\subsection{Meteorology}
+
+The conventional way to provide hourly meteorology is to use an ``ISC-ready'' meteorology file containing records of wind speed, wind bearing, atmospheric stability, and mixing height. We need only specify whether to use urban or rural mixing heights, as follows: 
+
+<<meteorology,fig=TRUE,include=FALSE>>=
+met <- Meteorology(met_5801.isc, use='urban')
+names(met)
+nrow(met)
+show(ggplot(met))
+@
+
+The hourly resolution ensures that we can adequately model the seasonal and diurnal variability. Figure~\ref{fig:meteorology} illustrates the joint distribution of wind speed and wind bearing; the wind is predominantly coming from the south-west.
+
+\subsection{Roadways and traffic}
+
+Importing shapefiles (with a package like \pkg{maptools} or \pkg{rgdal}) is usually the easiest way to get GIS data into R. Figure~\ref{fig:links} shows the San Franciso highway. This network is composed of multiple \textit{polylines}, each of which is composed of one or more segments or \textit{links}. 
+
+In this case, each polyline has an attribute, \code{TRVol2009}, that represents the Annual Average Daily Traffic for those links. 
+
+<<links,fig=TRUE,include=FALSE>>=
+lnk <- FreeFlowLinks(STRte_BAAQMD_v2.shp,
+	vehiclesPerHour = TRVol2009 / 24,
+	emissionFactor = 1.0,
+	width = 30.0)
+plot(SF_county.shp, col="light gray", border=NA)
+lines(lnk, lwd=2)
+@
+
+We need to divide the AADT by 24 to convert to vehicles per hour. We also need to specify the road width (iun meters), and an emission factor\footnote{The source strength (total emissions, in grams per mile per hour) modeled by CALINE3 for any given link are exactly equal to the emission factors multiplies by the traffic volumes. This means that, if you use a unit emissions factor, the resulting dispersion surface can be linearly scaled to reflect different emissions scenarios, without needing to run the dispersion step again.}, in grams per vehicle per mile. For the sake of this example, we'll use a ``unit emission factor'' of 1.0. 
+
+In California, fleet-level emission factors for specific pollutants can be obtained from models like EMFAC (TODO: cite). Imputing link-level factors from fleet-level factors can induce biases (CITE), but link-level data are often scarce.
+
+\subsection{Receptors}
+
+\textit{Receptors} are the locations at which the dispersed pollutant concentration will be calculated. CALINE3 is a steady-state Gaussian plume model, rather than a numerical grid-based model. Hence, it is up to us to determine the receptor grid, and it need not be regular. 
+
+For example, you might want to compute predicted concentrations at a set of geocoded street address locations. As long as you have these in a format that you can import into R (as a SpatialPoints object), you can use these. Or, you can statistically sample locations within defined regions (like ZIP codes), possibly using the \pkg{spatstat} package.
+
+\begin{figure}
+  \centering
+  \subfloat[Grid-based]{\label{fig:grid}\includegraphics[width=0.5\textwidth]{SanFrancisco-grid}}                
+  \subfloat[Ring-based]{\label{fig:links}\includegraphics[width=0.5\textwidth]{SanFrancisco-rings}}
+  \caption{Receptor locations sampled using two different methods.}
+  \label{fig:data}
+\end{figure}
+
+Modelers often use a regular Cartesian grid (Figure~\ref{fig:grid}), but this can induce artificial ``hot spots'' where the grid happens to fall closer to the road. A better approach (Figure~\ref{fig:rings}) is to create receptors at specific distances from the road network. This avoids the problem of apparent ``hot spots'', and in addition allows receptors to be packed more densely close to the roadway, where higher concentrations and higher spatial variability are expected. 
+
+<<grid,fig=TRUE,include=FALSE>>=
+rcp <- ReceptorGrid(lnk, resolution=250, maxDistance=1e3)
+plot(SF_county.shp, col="light gray", border=NA)
+lines(lnk)
+points(rcp, pch='+', cex=0.5)
+@
+
+<<rings,fig=TRUE,include=FALSE>>=
+rcp <- ReceptorRings(lnk, distances=c(100, 250, 500, 1000))
+plot(SF_county.shp, col="light gray", border=NA)
+lines(lnk)
+points(rcp, pch='+', cex=0.5)
+@
+
+\subsection{Other parameters}
+
+Additional parameters, including terrain and pollutant characteristics, also need to be specified. For detailed information, consult the CALINE3 User's Guide \cite{benson1979caline3}. Here we use some reasonable default values.
+
+<<model_setup>>=
+ter <- Terrain(surfaceRoughness=80.0)
+CO <- Pollutant("Carbon monoxide", molecularWeight=28.0, settlingVelocity=0.0)
+mod <- Caline3Model(lnk, met, rcp, ter, CO)
+@
+
+\section{Modeling}
+
+\subsection{Running the model}
+
+We use the \code{predict} method to run the model. It can be quickest to do a first pass using only 1\% of the meteorology, sampled at random:
+
+<<run_model>>=
+mod <- Caline3Model(lnk, sample.rows(met, p=0.001), rcp, ter, CO)
+pred <- predict(mod)
+@
+
+If you're using R on a console (not, say, the Mac R.app GUI), \pkg{Rcaline} will use the \pkg{multicore} package to do the computations in parallel, using however many cores you have (minus one). The speedup should be nearly linear in the number of cores.
+
+\section{Analyzing results}
+
+The result of running the model is an $M x N$ array, where $M$ is the number of meteorological conditions and $N$ is the number of receptors. Each cell indicates the predicted concentration (in g/$m^3$) at that receptor during those conditions. 
+
+\subsection{Aggregation}
+
+It is generally advisable to treat the result as a sample from an annual distribution (even if all hours from a single year are used). The \code{aggregate} function can be used to estimate the properties of that distribution, by computing summary statistics such as the mean or maximum. 
+
+<<aggregate>>=
+result <- aggregate(pred)
+head(result, 5)
+@
+
+\pagebreak
+\subsection{Plotting}
+
+Summary statistics can be visualized one at a time, or several at a time, using the \pkg{ggplot2} or \pkg{sp} packages:
+
+<<bubble_plot,fig=TRUE>>=
+show(ggplot(result))
+@
+
+\subsection{Interpolation}
+
+As an alternative to the bubble plot, it's possible to construct a raster image by interpolating the summary statistics back to a regular grid. For example:
+
+<<interpolate>>=
+grd <- ReceptorGrid(lnk, resolution=250, maxDistance=1e3)
+@
+
+<<save_workspace,echo=FALSE>>=
+save.image('SanFrancisco.Rda')
+@
+
+\bibliography{Rcaline}
+
+\end{document}

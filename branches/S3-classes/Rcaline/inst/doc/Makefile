@@ -1,13 +1,13 @@
-R := "$(R_HOME)/bin/R"
+R := R --quiet
 sweave := SWEAVE_STYLEPATH_DEFAULT="TRUE" $(R) CMD SWEAVE
 
 PDFLATEX_FLAGS = -quiet
 
-all : Rcaline.pdf
+all : Rcaline.pdf SanFrancisco.pdf
 
 %.pdf : %.tex %.bbl 
-	pdflatex $< >> %.log
-	pdflatex $< >> %.log
+	pdflatex $(PDFLATEX_FLAGS) $< >> $*.log
+	pdflatex $(PDFLATEX_FLAGS) $< >> $*.log
 
 %.bbl : %.aux
 	bibtex $<
@@ -15,7 +15,7 @@ all : Rcaline.pdf
 %.aux : %.tex
 	pdflatex $(PDFLATEX_FLAGS) $<
 
-.SECONDARY : 
+#.SECONDARY : 
 %.tex : %.Rnw
 	$(sweave) $<
 
@@ -23,4 +23,4 @@ all : Rcaline.pdf
 # http://cran.r-project.org/doc/manuals/R-exts.html#Writing-package-vignettes
 .PHONY :
 reallyclean : 
-	rm -f *.log *.aux *.dvi *.eps *.pdf *.tex *.bbl *.blg *.png
+	rm -f *.log *.aux *.dvi *.eps *.pdf *.tex *.bbl *.blg *.png *.out
