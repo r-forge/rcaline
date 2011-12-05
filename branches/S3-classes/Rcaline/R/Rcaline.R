@@ -1,8 +1,8 @@
-.onLoad <- function(lib.loc=NULL, package="Rcaline") {
-	library.dynam('Rcaline', package, lib.loc)
+.onLoad <- function(libname=NULL, pkgname="Rcaline") {
+	try(library.dynam('Rcaline', pkgname, libname))
 }
-.onUnload <- function(lib.loc=NULL) library.dynam.unload('Rcaline', lib.loc)
-.onAttach <- function(lib.loc, package) {}
+.onAttach <- function(libname, pkgname) {}
+.onUnload <- function(libpath) library.dynam.unload('Rcaline', libpath)
 
 #' Rcaline provides an interface to Fortran implementations of the CALINE model family. These steady-state, Gaussian dispersion models are used to predict aerosol concentrations downwind from mobile emission sources such as highway traffic.
 #'

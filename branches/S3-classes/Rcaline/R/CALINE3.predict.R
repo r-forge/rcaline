@@ -234,7 +234,7 @@ CALINE3.predict <- function(
 	# Label with appropriate units.
 	# NOTE: CALINE3 defaults to reporting values in 'ppm CO'.
 	#       Rcaline:::libcaline3.f does not multiply by FPPM, so values are in ug / m3.
-	units(predicted) <- 'ug/m3'
+	attr(predicted, 'units') <- 'ug/m3'
 	
 	return(predicted)
 	

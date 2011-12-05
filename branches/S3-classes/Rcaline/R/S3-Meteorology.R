@@ -1,6 +1,6 @@
-#' Create a vector of atmospheric stability classes.
+#' Pasquill
 #'
-#' Basically a restricted kind of \code{\link{factor}}.
+#' Construct a vector of atmospheric stability classes.
 #'
 #' @param x TODO
 #' @keywords meteorology
@@ -13,15 +13,15 @@ Pasquill <- function(x) {
 	return(obj)
 }
 
-#' Read a file in ISC format.
+#' ISCFile
 #'
-#' Use \code{\link{Meteorology}} to get meteorology in the format
-#' required by CALINE3.
+#' Read records from a file in ISC format.
+#'
+#' NOTE: Rotates the "flow vector" (wind direction) column
+#' by 180 degrees to obtain the wind bearing.
 #'
 #' @param filename filename
-#'
-#' @return an ISCFile object
-#'
+#' @return an ISCFile object (essentially a \link{data.frame})
 #' @keywords meteorology
 #' @export
 ISCFile <- function(filename) {
@@ -44,10 +44,10 @@ ISCFile <- function(filename) {
 	)
 	
 	if(all(obj$year < 70)) {
-		warning("Adding 2000 to two-digit years")
+		message("Adding 2000 to two-digit years")
 		obj <- transform(obj, year = year + 2000)
       } else if(all(obj$year < 100)) {
-      	warning("Adding 1900 to two-digit years")
+      	message("Adding 1900 to two-digit years")
       	obj <- transform(obj, year = year + 1900)
       }
 	
@@ -63,26 +63,39 @@ ISCFile <- function(filename) {
 
 }
 
-#' Load meteorological data into memory.
+#' Meteorology
 #'
-#' Compatible with ISC-format files. Rotates the "flow vector" (wind direction)
-#' from ISC-format files by 180 degrees to obtain the wind bearing. Defaults to
-#' retaining the urban mixing heights only. 
-#'
-#' @param iscfile filename or ISCFile object
+#' Construct a Meteorology object, generally from a file containing ISC-formatted records.
+#' 
+#' @param x a filename, \link{ISCFile} object, or data.frame
 #' @param use whether to use urban or rural mixing heights
-#'
-#' @return a Meteorology object (basically a \code{data.frame})
-#'
+#' @return a Meteorology object (essentially a \link{data.frame})
 #' @keywords meteorology
 #' @export
 Meteorology <- function(x, ...) UseMethod("Meteorology")
+
+#' @S3method Meteorology data.frame
+#' @rdname Meteorology
+#' @export
 Meteorology.data.frame <- function(x) {
 	stopifnot(identical(names(x),
 		c('windSpeed', 'windBearing', 'stabilityClass', 'mixingHeight')))
 	class(x) <- c('Meteorology', 'data.frame')
 	return(x)
 }
+
+#' @S3method Meteorology character
+#' @rdname Meteorology
+#' @export
+Meteorology.character <- function(x) {
+	isc <- ISCFile(filename=x)
+	met <- Meteorology(isc)
+	return(met)
+}
+
+#' @S3method Meteorology ISCFile
+#' @rdname Meteorology
+#' @export
 Meteorology.ISCFile <- function(x, use = c("urban", "rural")) {
 
 	# Determine whether to use urban or rural mixing heights column
@@ -108,46 +121,14 @@ Meteorology.ISCFile <- function(x, use = c("urban", "rural")) {
 	# Warn about calm wind speeds
 	calm <- which(met$windSpeed < 1)
 	if(length(calm) > 0) {
-		warning(length(calm), " wind speeds less than 1.0 m/s (will produce NAs)")
-		show(met[calm,])
+		message(length(calm), " wind speeds less than 1.0 m/s (will produce NAs): ", paste(calm, collapse=', '))
 	}
 
 	met <- within(met, {
-		units(windSpeed) <- "m/s"
-		units(windBearing) <- "deg"
-		units(mixingHeight) <- "m"
+		attr(windSpeed, 'units') <- "m/s"
+		attr(windBearing, 'units') <- "deg"
+		attr(mixingHeight, 'units') <- "m"
 	})
 	class(met) <- c("Meteorology", "data.frame")
 	return(met)
 }
-
-#' Visualize meteorological data.
-#'
-#' Plots a wind rose using ggplot2.
-#'
-#' @param x a Meteorology object
-#' @param ... other arguments
-#'
-#' @keywords meteorology
-#' @S3method plot Meteorology
-#' @export
-plot.Meteorology <- function(x, ...) {
-	require(ggplot2)
-	p <- ggplot(data=as.data.frame(x))
-	p <- p + geom_histogram(aes(x=windBearing, y=..density..), binwidth=45/2)
-	p <- p + scale_x_continuous(limits=c(0,360), breaks=seq(0, 360, by=45))
-	return(p + coord_polar(theta='x'))
-}
-
-as.Fortran.Meteorology <- function(x) {
-	dat <- as.data.frame(x)
-	with(dat, list(	
-		UM = real4(windSpeed),
-		BRGM = real4(windBearing),
-		CLASM = as.integer(pmin(stabilityClass, Pasquill(6))),
-		MIXHM = real4(mixingHeight)
-	))
-}
-
-setOldClass("Meteorology")
-setMethod("as.Fortran", "Meteorology", as.Fortran.Meteorology)

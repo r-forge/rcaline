@@ -4,7 +4,6 @@
 #' @param ... named arguments
 #'
 #' @return a list object
-#' @example FortranArrays(XR=1:3, YR=1:3, ZR=1.8)
 #' @export
 FortranArrays <- function(as.real=as.single, ...) {
 	args <- data.frame(...)
@@ -18,7 +17,3 @@ FortranArrays <- function(as.real=as.single, ...) {
 
 as.Fortran <- function(x, ...) UseMethod("as.Fortran", x)
 setGeneric("as.Fortran")
-
-#as.Fortran.data.frame <- function(x, ...) {
-#	return(cbind(apply(x, 1, real4)))
-#}
