@@ -1,7 +1,6 @@
 % \VignetteIndexEntry{Rcaline: Modeling traffic-related pollution with R and the CALINE3 dispersion model} 
-% \VignetteKeyword{Rcaline}
-% \VignetteKeyword{CALINE}
-% \VignetteKeyword{CALINE3}
+% \VignetteKeywords{Rcaline,CALINE,CALINE3}
+% \VignettePackage{Rcaline}
 
 \documentclass[a4paper]{article}
 
@@ -48,13 +47,13 @@ options(
 
 At the heart of \pkg{Rcaline} is a Fortran library, \pkg{libcaline}, that wraps original code from the CALINE3 implementation created by the California Department of Transportation (CALTRANS).\footnote{Support is planned for CALINE4 in a future release.} Given the same inputs, \pkg{libcaline} has been tested to produce identical outputs. However, \pkg{libcaline} removes significant limitations found in previous implementations of CALINE: for example, \pkg{libcaline} can be used to model an unlimited number of roadway links and an unlimited number of receptors, bound only by available memory and CPU resources.
 
-By providing access to \pkg{libcaline} within the R environment, \pkg{Rcaline} also makes it much easier to use the CALINE model with contemporary data sources, such as ESRI shapefiles. \pkg{Rcaline} also provides full machine-precision access to CALINE model results in a convenient format. Thus, it's easy to use basic R commands---or third-party R packages---to visualize, compare, and export model results. Accompanying vignettes illustrate the use of several complementary packages, including: \pkg{sp}, \pkg{rgdal}, and \pkg{rgeos}, for handling spatial data; \pkg{ggplot2}, for plotting results; and \pkg{automap}, for interpolation.
+By providing access to \pkg{libcaline} within the R environment, \pkg{Rcaline} also makes it much easier to use the CALINE model with contemporary data sources, such as ESRI shapefiles. \pkg{Rcaline} also provides full machine-precision access to CALINE model results in a convenient format. Thus, it's easy to use basic R commands---or third-party R packages---to visualize, compare, and export model results. Accompanying vignettes illustrate the use of several complementary packages, including: \pkg{sp}, \pkg{rgdal}, and \pkg{rgeos}, for handling spatial data; \pkg{ggplot2}, for plotting results; and \pkg{MBA}, for interpolation.
 
-Finally, the R environment also provides useful scripting capabilities for automating large batches of model runs. For advanced users, it is possible to combine \pkg{Rcaline} with parallel computing tools, like the \pkg{multicore} package, to achieve significant speed gains in large model runs (e.g., ~4x on a modern 4-core machine, or 8x on an 8-core machine) in pure R. Within a shell environment, \pkg{Rcaline} can also be scripted, with the use of GNU \code{make}, \code{qsub}, or other distributed computing tools.
+Finally, the R environment also provides useful scripting capabilities for automating large batches of model runs. For advanced users, it is possible to combine \pkg{Rcaline} with parallel computing tools, like the \pkg{foreach} package, to achieve significant speed gains in large model runs (e.g., ~4x on a modern 4-core machine, or 8x on an 8-core machine) in pure R. Within a shell environment, \pkg{Rcaline} can also be scripted, with the use of GNU \code{make}, \code{qsub}, or other distributed computing tools.
 
 \section{Scope and Limitations}
 
-The CALINE3 model is most appropriately used for modeling dispersion of carbon monoxide (CO) attributable to free-flow traffic with wind speeds greater than 1.0 m/s. As with any model, care should be exercised to ensure that the practical application is theoretically well founded. For more on the theoretical scope and limitations of the CALINE model family, including terrain and other considerations, see \cite{benson1992review}. 
+The CALINE3 model was originally developed for modeling the dispersion of carbon monoxide (CO) from free-flow traffic, over homogeneous terrain, where wind speeds generally exceed 1.0 m/s. As with any model, care should be exercised to ensure that the practical application is theoretically well founded. For more on the theoretical scope and limitations of the CALINE model family, including terrain and other considerations, see \cite{benson1992review}. 
 
 \section{Acknowledgments}
 

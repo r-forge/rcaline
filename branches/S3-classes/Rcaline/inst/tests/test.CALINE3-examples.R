@@ -13,11 +13,11 @@ test_that("Case 1: single link", {
 		matrix(c(7.6)))
 })
 
-test_that("Case 2: multiple links", {	
-	expect_that(MultiLink, is_a('Caline3Model'))
-	pred <- predict(MultiLink)
+test_that("Case 2: rural curved alignment", {	
+	expect_that(RuralCurved, is_a('Caline3Model'))
+	pred <- predict(RuralCurved)
 	ambient <- 3.0
 	expect_equivalent(
 		rounded(pred) + ambient,
-		matrix(c(6.1, 10.7, 4.4, 8.3)))
+		matrix(c(6.1, 10.7, 4.4, 8.4)))
 })

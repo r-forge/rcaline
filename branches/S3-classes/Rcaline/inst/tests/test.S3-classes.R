@@ -9,19 +9,20 @@ lnk <- FreeFlowLinks(STRte_BAAQMD_v2.shp,
 	emissionFactor = 1.0,
 	width = 30.0)
 expect_that(lnk, is_a('FreeFlowLinks'))
+expect_that(centerlines(lnk), is_a('SpatialLines'))
 
 # Conventional: Cartesian receptor grid
-rcp <- ReceptorGrid(lnk, elevation=1.8, resolution=500)
+rcp <- ReceptorGrid(lnk, z=1.8, resolution=500)
 expect_that(rcp, is_a('SpatialPoints'))
+expect_equal(proj4string(rcp), proj4string(lnk))
 
 # Better: construct rcp based on distance to roadway
-rcp <- ReceptorRings(lnk, elevation=1.8, distances=c(200, 500, 1000))
+rcp <- ReceptorRings(lnk, z=1.8, distances=c(200, 500, 1000))
 expect_that(rcp, is_a('SpatialPoints'))
+expect_equal(proj4string(rcp), proj4string(lnk))
 
 # met_5801.isc is provided by package data
-expect_warning(
-	met <- Meteorology(met_5801.isc, use='urban')[1:3,],
-	fixed('2 wind speeds less than 1.0 m/s (will produce NAs)'))
+expect_message(met <- Meteorology(met_5801.isc, use='urban')[1:3,], '2 wind speeds less than 1.0 m/s')
 	
 # Semi-urban terrain
 ter <- Terrain(surfaceRoughness = 80.0)
