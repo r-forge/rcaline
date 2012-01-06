@@ -8,7 +8,7 @@
 
   spplot.AggregatedConcentrations(obj, ...)
 
-  ggplot.AggregatedConcentrations(data, select = NA, ...)
+  ggplot.AggregatedConcentrations(data, bounds, ...)
 }
 \arguments{
   \item{from}{an AggregatedConcentrations object}
