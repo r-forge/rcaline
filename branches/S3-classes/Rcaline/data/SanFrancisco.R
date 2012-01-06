@@ -7,11 +7,13 @@
 #' @keywords data datasets
 
 .read.layer <- function(file, ...) {
-      suppressPackageStartupMessages(require(rgdal))
-      dsn <- dirname(file)
-      layer <- gsub(".shp$", "", basename(file))
-      spobj <- rgdal::readOGR(dsn, layer, ...)
-      return(spobj)
+    suppressPackageStartupMessages(require(rgdal))
+    dsn <- normalizePath(dirname(file))
+    layer <- gsub(".shp$", "", basename(file))
+	message('Reading ', layer, ' from ', dsn)
+	stopifnot(file.exists(dsn))
+    spobj <- rgdal::readOGR(dsn, layer, ...)
+    return(spobj)
 }
 
 # Read shapefiles from extdata directory.
