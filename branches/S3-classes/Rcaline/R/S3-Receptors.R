@@ -17,17 +17,23 @@
 #' @seealso ReceptorRings
 #' @rdname ReceptorGrids
 #' @export
-ReceptorGrid <- function(links, z=1.8, resolution=1000.0, maxDistance=1000.0, rgeos.scale=1e+06) {
+ReceptorGrid <- function(links, z=1.8, resolution=1000.0, maxDistance=1000.0, 
+		rgeos.scale=1e+06) {
 	require(rgeos)
 	rgeos::setScale(rgeos.scale)
+	
 	# FIXME: take roadway width into account (don't measure distance from centerline, but from edge of road)
-	spgeom <- centerlines(links)
-	buf <- rgeos::gBuffer(spgeom, width=maxDistance)
+	polylines <- centerlines(links)
+	buf <- rgeos::gBuffer(polylines, width=maxDistance)
 	xy <- spsample(buf, cellsize = c(resolution, resolution), type = "regular")
 	coordnames(xy) <- c("x", "y")
 	spobj <- SpatialPoints(xy)
 	proj4string(spobj) <- proj4string(links)
 	rcp <- Receptors(spobj, z=z)
+	
+	# Set row names
+	row.names(rcp) <- paste('RECP.', 1:length(rcp))
+	
 	return(rcp)
 }
 
@@ -47,8 +53,8 @@ ReceptorGrid <- function(links, z=1.8, resolution=1000.0, maxDistance=1000.0, rg
 #' @keywords receptors
 #' @rdname ReceptorGrids
 #' @export
-ReceptorRings <- function(links, z=1.8, 
-	distances=c(50, 100, 250, 500, 1000), spacing=identity, rgeos.scale=1e+06) {
+ReceptorRings <- function(links, z=1.8, distances=c(50, 100, 250, 500, 1000), 
+	spacing=identity, rgeos.scale=1e+06) {
 		
 	require(rgeos)
 	rgeos::setScale(rgeos.scale)
@@ -68,8 +74,12 @@ ReceptorRings <- function(links, z=1.8,
 		SpatialPointsDataFrame(pts, data.frame(distance = d, spacing = spacings))
 	}
 	spobj <- do.call(rbind, mapply(spsample.ring, rings, distances, spacings=spacing(distances)))
-	proj4string(spobj) <- proj4string(links)
 	rcp <- Receptors(spobj, z=z)
+	proj4string(rcp) <- proj4string(centerlines(links))
+	
+	# Set row names
+	row.names(rcp) <- paste('RECP.', 1:length(rcp))
+	
 	return(rcp)
 }
 

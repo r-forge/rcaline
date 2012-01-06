@@ -33,6 +33,7 @@ predict.Caline3Model <- function(object, .parallel=TRUE) {
 	# This should be quick
 	# TODO: split by receptors or meteorology, whichever is greater
 	NR <- nrow(as.data.frame(rcp))
+	stopifnot(NR > 0)
 	NM <- nrow(as.data.frame(met))
 	NL <- nrow(as.data.frame(lnk))
 	
@@ -41,6 +42,7 @@ predict.Caline3Model <- function(object, .parallel=TRUE) {
 		require(foreach)
 		require(multicore)
 		n.cores <- multicore:::detectCores() - 1
+		message('Using ', n.cores, ' cores')
 		require(doMC)
 		registerDoMC(cores=n.cores)
 	

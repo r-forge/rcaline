@@ -77,27 +77,21 @@ setMethod("spplot", "AggregatedConcentrations", spplot.AggregatedConcentrations)
 #' @S3method ggplot AggregatedConcentrations
 #' @rdname AggregatedConcentrations-methods
 #' @export
-ggplot.AggregatedConcentrations <- function(data, select=NA, ...) {
+ggplot.AggregatedConcentrations <- function(data, bounds, ...) {
 	model <- attr(data, 'model')
-	map <- ggplot(model)
+	rcp <- receptors(model)
+	lnk <- links(model)
+	receptor.data <- as.data.frame(rcp)
+	link.data <- as.data.frame(lnk)
+	receptor.layer <- geom_point(aes(x=x, y=y), pch=3, alpha=0.1, data=receptor.data)
+	link.layer <- geom_segment(aes(x=XL1, y=YL1, xend=XL2, yend=YL2), alpha=0.5, data=link.data)
 	results.spatial <- as(data, 'SpatialPointsDataFrame')
 	results.data <- as.data.frame(results.spatial)
-	if(is.na(select)) {
-		results.geom <- geom_point(
-			aes(x=x, y=y, fill=mean, color=mean, size=mean, order=mean))
-		map %+% results.data + results.geom
-	} else {
-		varnames <- names(results.spatial@data)
-		results.wide <- results.data[,c('x', 'y', select)]
-		results.long <- reshape(results.wide,
-			idvar = c('x', 'y'),
-			varying = list(select),
-			times = select,
-			timevar = 'Variable',
-			v.names = 'Value',
-			direction = 'long')
-		results.geom <- geom_point(
-			aes(x=x, y=y, fill=Value, color=Value, size=Value, order=Value))
-		map %+% results.long + results.geom + facet_wrap(~ Variable, ...)
+	#results.geom <- geom_point(aes(x=x, y=y, order=mean, alpha=mean, color=mean))
+	map <- ggplot(results.data) + coord_equal() + link.layer + receptor.layer
+	if(!missing(bounds)) {
+		bb <- bbox(bounds)
+		map <- map + easting(limits=bb['x',]) + northing(limits=bb['y',])
 	}
+	return(map)
 }

@@ -41,7 +41,8 @@ run.CALINE3 <- function(lnk, met, rcp, ter, pol) {
 	
 	# Initialize the full matrix
 	pred <- matrix(NA, 
-		nrow = nrow(rcp), ncol = nrow(met), 
+		nrow = nrow(as.data.frame(rcp)), 
+		ncol = nrow(as.data.frame(met)), 
 		dimnames = list(rownames(rcp), rownames(met)))	
 	
 	# Compute only the conditions (columns) for which wind speed >= 1.0
