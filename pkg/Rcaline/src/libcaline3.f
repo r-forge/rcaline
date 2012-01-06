@@ -107,11 +107,22 @@ C
 C     MET LOOP BEGINS
       DO 8500 IM=1,NM
 
+C     FOR WIND SPEEDS LESS THAN 1.0 m/s, SKIP CALCULATIONS;
+C     OTHERWISE, ZERO CONCENTRATIONS FOR ALL RECEPTORS.
       U=UM(IM)
+C      PRINT *, 'U is: ', U
+      IF (U.LT.1) THEN
+        GOTO 8500
+      ELSE
+ 	    DO IR=1,NR 
+          C(IR,IM)=0.
+        END DO
+      END IF
+      
       BRG=BRGM(IM)
 	  CLAS=CLASM(IM)
 	  MIXH=MIXHM(IM)
-C      PRINT *, 'U, BRG, CLAS, MIXH are: ', U,BRG,CLAS,MIXH
+C      PRINT *, 'BRG, CLAS, MIXH are: ', BRG,CLAS,MIXH
       
       DO 1050 I=1,NL
       LL(I)=SQRT((XL1(I)-XL2(I))**2+(YL1(I)-YL2(I))**2)
@@ -245,7 +256,8 @@ C
 C                                                                       
 C *****  RECEPTOR LOOP  *****                                           
 C                                                                       
-      DO 6000 IR=1,NR                                                   
+      DO 6000 IR=1,NR   
+      
       A=(XR(IR)-XL1(IL))**2+(YR(IR)-YL1(IL))**2                         
       B=(XR(IR)-XL2(IL))**2+(YR(IR)-YL2(IL))**2                         
       L=(B-A-LL(IL)**2)/(2.*LL(IL))                                     
@@ -454,7 +466,7 @@ C
  3760 INC=FACT*(FAC5-FAC3)                                              
 C     ! INCREMENTAL CONCENTRATION FROM ELEMENT                          
 C                                                                       
-      C(IR,IM)=C(IR,IM)+(INC*FPPM)
+      C(IR,IM)=C(IR,IM)+INC
 C     ! SUMMATION OF CONCENTRATIONS                                     
 C                                                                       
  3770 IF (FINI.EQ.0.) THEN
@@ -479,10 +491,10 @@ C *****  END LOOPS  *****
 C                                                                       
  6000 CONTINUE                             
 
-C     PRINT *, "C is:", C                                                    
-
  8000 CONTINUE    
 
  8500 CONTINUE    
+
+C      PRINT *, "C is:", C                                                    
       
  9000 END SUBROUTINE

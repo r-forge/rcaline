@@ -1,7 +1,6 @@
 % \VignetteIndexEntry{Rcaline: Modeling traffic-related pollution with R and the CALINE3 dispersion model} 
-% \VignetteDepends{sp, maptools, rgeos, ggplot2, automap}
-% \VignetteKeyword{CALINE}
-% \VignetteKeyword{CALINE3}
+% \VignetteKeywords{Rcaline,CALINE,CALINE3}
+% \VignettePackage{Rcaline}
 
 \documentclass[a4paper]{article}
 
@@ -10,6 +9,7 @@
 \bibliographystyle{plain}
 
 \usepackage[pdftex]{graphicx}
+\usepackage{hyperref}
 
 \begin{document}
 
@@ -22,12 +22,10 @@ options(width=60, continue=" ")
 options(SweaveHooks=list(fig=function() par(mar=c(5.1, 4.1, 1.1, 2.1))))
 @
 
-\maketitle
-
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\Rvar}[1]{\texttt{#1}}
 \newcommand{\Rfunc}[1]{\texttt{#1}}
-\newcommand{\Rpkg}[1]{\texttt{#1}}
+\newcommand{\pkg}[1]{\texttt{#1}}
 
 <<echo=FALSE>>= 
 options(
@@ -39,302 +37,29 @@ options(
 
 \SweaveOpts{width=6,height=4}
 
+\maketitle
+
 \section{Introduction}
 
-\Rpkg{Rcaline} provides an interface to the CALINE family of line-source atmospheric dispersion models \cite{benson1979caline3,benson1992review}. These steady-state, Gaussian dispersion models are used to predict aerosol concentrations downwind from mobile emission source(s) such as highway traffic.
+\pkg{Rcaline} provides an interface to the CALINE family of line-source atmospheric dispersion models \cite{benson1979caline3,benson1992review}. These steady-state, Gaussian dispersion models are used to predict aerosol concentrations downwind from mobile emission source(s) such as highway traffic.
 
-\subsection{Features}
+\section{Features}
 
-At the heart of \Rpkg{Rcaline} is a Fortran library, \Rpkg{libcaline}, that wraps original code from the CALINE3 implementation created by the California Department of Transportation (CALTRANS).\footnote{Support is planned for CALINE4 in a future release.} Given the same inputs, \Rpkg{libcaline} has been tested to produce identical outputs. However, \Rpkg{libcaline} removes significant limitations found in previous implementations of CALINE: for example, \Rpkg{libcaline} can be used to model an unlimited number of roadway links and an unlimited number of receptors, bound only by available memory and CPU resources.
+At the heart of \pkg{Rcaline} is a Fortran library, \pkg{libcaline}, that wraps original code from the CALINE3 implementation created by the California Department of Transportation (CALTRANS).\footnote{Support is planned for CALINE4 in a future release.} Given the same inputs, \pkg{libcaline} has been tested to produce identical outputs. However, \pkg{libcaline} removes significant limitations found in previous implementations of CALINE: for example, \pkg{libcaline} can be used to model an unlimited number of roadway links and an unlimited number of receptors, bound only by available memory and CPU resources.
 
-By providing access to \Rpkg{libcaline} within the R environment, \Rpkg{Rcaline} also makes it much easier to run CALINE using contemporary data sources, such as ESRI shapefiles, as input. \Rpkg{Rcaline} also provides full machine-precision access to CALINE model results in a convenient format. Thus, it's easy to use basic R commands---or third-party R packages---to visualize, compare, and export model results. This vignette illustrates the use of several other packages that complement \Rpkg{Rcaline}, including: \Rpkg{sp} and \Rpkg{maptools}, for handling spatial data; \Rpkg{rgeos}, for buffering; \Rpkg{ggplot2}, for visualization; and \Rpkg{automap}, for interpolation.
+By providing access to \pkg{libcaline} within the R environment, \pkg{Rcaline} also makes it much easier to use the CALINE model with contemporary data sources, such as ESRI shapefiles. \pkg{Rcaline} also provides full machine-precision access to CALINE model results in a convenient format. Thus, it's easy to use basic R commands---or third-party R packages---to visualize, compare, and export model results. Accompanying vignettes illustrate the use of several complementary packages, including: \pkg{sp}, \pkg{rgdal}, and \pkg{rgeos}, for handling spatial data; \pkg{ggplot2}, for plotting results; and \pkg{MBA}, for interpolation.
 
-Finally, the R environment also provides useful scripting capabilities for automating large batches of model runs. For advanced users, it is possible to combine \Rpkg{Rcaline} with parallel computing tools, like the \Rpkg{multicore} package, to achieve significant speed gains in large model runs (e.g., ~4x on a modern 4-core machine, or 8x on an 8-core machine) in pure R. Within a shell environment, \Rpkg{Rcaline} can also be scripted, with the use of GNU \code{make}, \code{qsub}, or other distributed computing tools.
+Finally, the R environment also provides useful scripting capabilities for automating large batches of model runs. For advanced users, it is possible to combine \pkg{Rcaline} with parallel computing tools, like the \pkg{foreach} package, to achieve significant speed gains in large model runs (e.g., ~4x on a modern 4-core machine, or 8x on an 8-core machine) in pure R. Within a shell environment, \pkg{Rcaline} can also be scripted, with the use of GNU \code{make}, \code{qsub}, or other distributed computing tools.
 
-\subsection{Scope and limitations}
+\section{Scope and Limitations}
 
-The CALINE3 model is most appropriately used for modeling dispersion of carbon monoxide (CO) attributable to free-flow traffic with wind speeds greater than 1.0 m/s. As with any model, care should be exercised to ensure that the practical application is theoretically well founded. For more on the theoretical scope and limitations of the CALINE model family, including terrain and other considerations, see \cite{benson1992review}. 
-
-\section{Example Usage}
-
-In this section, we illustrate the use of \Rpkg{Rcaline} by applying it to highway data sourced from the OpenStreetMaps project \cite{haklay2008openstreetmap} (Figure~\ref{fig:highway_centerlines}). There are three main steps: (1) preparing the input; (2) running the model; and (3) visualizing and/or exporting the output. Most of the work consists in preparing the input, and we'll illustrate how the construction of a receptor grid is a crucial step in that stage. The CALINE User's Guide \cite{benson1979caline3} gives additional guidance beyond what we'll cover, so look to that for more information.
-
-\subsection{Setting up the model}
-
-\subsubsection{Reading highway data from an ESRI shapefile}
-
-Contemporary GIS data is often exchanged in the form of shapefiles, and the \Rpkg{Rcaline} package includes an example shapefile containing highway data for West Oakland, CA. We can import it using the \Rpkg{maptools} package:
-
-<<label=read_shpfile,results=hide>>=
-library(maptools)
-highways.shp <- system.file('extdata', 'WestOakland', 'highways.shp', package='Rcaline')
-highways.proj4 <- CRS(" +proj=utm +zone=10 +ellps=WGS84 +units=m")
-highways <- readShapeSpatial(highways.shp, proj4string=highways.proj4)
-stopifnot(is.projected(highways))
-coordnames(highways) <- c('x','y')
-highway.segments <- Rcaline::as.segments(highways)
-@
-
-Note that, when working with Rcaline, all x, y, and z values should be in a \textit{projected} coordinate system, with units in meters. Here, our coordinates are in UTM-10, so we're OK. If the coordinates in your shapefile are geographic (longitude and latitude), you'll need to use the \Rpkg{rgdal} package, a desktop GIS, or another tool to transform them first.
-
-After reading in the shapefile, we converted it to a collection of individual segments using Rcaline's \code{as.segments} function. When we run the CALINE model, it will compute predicted contributions from each segment to each receptor, then sum these together to arrive at the predicted concentrations. 
-
-Figure~\ref{fig:highway_centerlines} shows the roadway geometry that we just imported. We'll be using the \Rpkg{ggplot2} package for mapping and visualizing from here on, although there are also basic plotting functions available in R and the \Rpkg{sp} package. 
-
-\begin{figure}[ht]
-\begin{center}
-<<label=highway_centerlines,fig=TRUE>>=
-library(ggplot2)
-kilo <- function(x) x / 1000
-easting <- function(...) scale_x_continuous("Easting (km)", formatter=kilo, ...)
-northing <- function(...) scale_y_continuous("Northing (km)", formatter=kilo, ...)
-map <- ggplot() + coord_equal() + easting() + northing()
-highway.centerlines <- geom_segment(aes(x=x0,y=y0,xend=x1,yend=y1), highway.segments)
-show(map + highway.centerlines)
-@
-\caption{Example highway geometry.}
-\label{fig:highway_centerlines}
-\end{center}
-\end{figure}
-
-\subsubsection{Assigning and imputing roadway attributes}
-
-Although our shapefile contains an estimate of traffic volume (AADT), we'll need to construct values for a few other CALINE inputs. 
-
-First, we'll need to estimate the widths of the roadways. Using the number of lanes as a guide, we can estimate the width by assuming 3.5 m per lane plus a shoulder width of 3 m on each side. But some of the NLANES values are missing, so first we need to replace them with an imputed value. For that, we'll just use the median of the non-missing data.
-
-<<label=impute_width>>=
-highway.segments <- within(highway.segments, {
-	LANES <- replace(LANES, which(is.na(LANES)), median(LANES, na.rm=TRUE))
-})
-highway.segments <- transform(highway.segments, width = 3 + 3.5 * LANES + 3)
-@
-
-Two more required inputs are the height of the roadway above ground level, and its classification as either At Grade (AG); Fill (FL); Bridge (BR); or Depressed (DP). \footnote{This classification system allows for a correction to be made depending on whether air can flow below as well as above the roadway. It also allows for a correction for links built on raised ground or in a trench---in which case air will also flow differently.} For the moment, we'll assume all of the roadways are At Grade and 0.0 m above ground level.
-
-<<label=assume_at_grade>>=
-highway.segments <- transform(highway.segments, height=0.0, classification='AG')
-@
-
-The remaining required inputs are the \textit{flow}, or traffic volume (vehicles per hour), and an \textit{emissions factor}, given in grams per mile [per vehicle].\footnote{Precise estimates for emission factors can be obtained with the use of a sophisticated model, such as EMFAC \cite{emfac2007motor}, that takes into account prevailing weather conditions (temperature and humidity) as well as the composition of the local vehicle fleet. Fleet composition and emissions inventories are sometimes available on a statewide or regional basis; for example, the California Air Resources Board provides an emissions inventory at this level. \cite{carb2005estimated}} These can vary along the highway, but again, for now, we'll just assume they're constant. \footnote{Conveniently, these values just act as scalar multipliers of the predicted concentrations, so you can divide or multiply the model results to re-scale these values, as long as their spatiotemporal distribution doesn't change.}
-
-<<label=assign_flow_and_emissions>>=
-highway.segments <- transform(highway.segments, flow=AADT/24.0, emissions=10.0)
-@
-
-Because we're interested in hourly estimates (our meteorological records are hourly too), we have to remember to divide the average daily traffic by 24. 
-
-\subsubsection{Importing meteorological records}
-
-CALINE requires four inputs corresponding to the prevailing meteorology:
-\begin{itemize}
-\item wind bearing;
-\item wind speed;
-\item Pasquill stability class; and
-\item mixing height.
-\end{itemize}
-
-Hourly values for these are usually available in the form of an ``ISC-ready'' input file, often with a .MET or .ASC file extension. \Rpkg{Rcaline} provides a convenience function, \Rfunc{read.ISC}, for parsing these.
-
-<<>>=
-library(Rcaline)
-metfile <- system.file('extdata', 'WestOakland', 'OaklandSTP-2000.ASC', package='Rcaline')
-meteorology <- read.ISC(metfile)$records
-with(meteorology, quantile(wind.speed))
-@
-
-A wind rose depicting the distribution of wind speed and wind bearing is shown in Figure~\ref{fig:plot_wind_rose}. The wind bearing is the direction that the wind is coming \textit{from}, so in this case the winds are mainly from the west. They're generally over 1.0 m/s, too, which is good for the accuracy of the model's predictions.
-
-\begin{figure}[ht]
-\begin{center}
-<<label=plot_wind_rose,fig=TRUE>>=
-speed.breaks <- c(0, 1, 2, 3, 5, 10, floor(1 + max(meteorology$wind.speed)))
-wind.rose <- ggplot(data=meteorology) + coord_polar() +
-	geom_bar(aes(wind.bearing, ..count../8760, 
-		fill=cut(wind.speed, speed.breaks, right=FALSE)), binwidth=30)
-show(wind.rose + 
-	scale_x_continuous("", limits=c(0,360), breaks=seq(0,360,by=45)) +
-	scale_y_continuous("", formatter="percent") + 
-	scale_fill_brewer("Speed (m/s)", pal="Set3"))
-@
-\caption{Wind rose for West Oakland meteorology.}
-\label{fig:plot_wind_rose}
-\end{center}
-\end{figure}
-
-\subsubsection{Constructing a receptor grid}
-
-Now that we have the traffic-related input and the meteorology, we need to define a \textit{receptor grid}. These are the locations at which we'll use the model to explicitly predict a pollutant concentration. 
-
-A receptor grid can be constructed out of regularly spaced points, but it doesn't have to be. For example, receptor locations might be defined by census block points, or by a selection of coordinates stored in a CSV file, or by a population-weighted sample. 
-
-But for starters, we'll construct a rather coarse, regularly spaced grid. We do this by constructing a buffer around the highways, and then sampling inside the buffer with the help of \code{spsample}. We also add a z-value to the grid, corresponding to the ``average'' human height of 1.8 m. See Figure~\ref{fig:plot_receptor_grid} for a depiction of the grid.
-
-<<construct_receptor_grid>>=
-library(rgeos)
-rgeos::setScale(1e06)
-buffer <- gBuffer(highways, width=1000)
-cartesian.grid <- spsample(buffer, cellsize=c(500,500), type="regular")
-coordnames(cartesian.grid) <- c('x','y')
-receptors <- SpatialPointsDataFrame(cartesian.grid, data=data.frame(z=rep(1.8, length(cartesian.grid))))
-@
-
-In later sections, we'll see how to improve the efficiency of Rcaline---and the quality of our figures---by making estimates at more carefully chosen locations. 
-
-\subsection{Running the model}
-
-For illustration's sake, we'll start by running the model using only the first of the hourly meteorology conditions. \code{CALINE3.predict} always returns a NxM array, where N is the number of receptors, and M is the number of meteorological conditions. Each cell in the array corresponds to the sum of the incremental contributions from all roadway segments to that receptor under those conditions. If you want to compute the 1-hour maximum, simply \code{apply} the \code{max} function across the columns of the array. Similarly, if you want to use the annual average, you can compute the column-wise means instead.\footnote{Things get a little more complicated when wind speeds are less than 1.0 m/s. \code{CALINE3.predict} won't accept such inputs. You can treat calm winds as a ``zero'' concentration, or you can impute them in another way.} Here we compute both the max and the mean (they'll be identical), and then re-bind the result to the SpatialPointsDataFrame called \code{receptors}.
-
-<<run_receptor_grid>>=
-predicted.array <- CALINE3.predict(receptors, highway.segments, meteorology[1,], surface.roughness=100.0)
-predicted.data.frame <- data.frame(mean.value=apply(predicted.array, 1, mean), max.value=apply(predicted.array, 1, max))
-receptors <- SpatialPointsDataFrame(receptors, data=predicted.data.frame)
-@
-
-\begin{figure}[ht]
-\begin{center}
-<<plot_receptor_grid,fig=TRUE>>=
-segment.aes <- aes(x=x0, y=y0, xend=x1, yend=y1)
-highway.centerlines <- geom_segment(segment.aes, highway.segments)
-bubble.aes <- aes(x=x, y=y, size=mean.value, color=mean.value, order=mean.value)
-receptor.concentrations <- geom_point(bubble.aes, as.data.frame(receptors))
-show(map + highway.centerlines + receptor.concentrations)
-@
-\caption{Example highway geometry, receptor grid, and predictions for grid coordinates.}
-\label{fig:plot_receptor_grid}
-\end{center}
-\end{figure}
-
-In Figure~\ref{fig:plot_receptor_grid}, we use a bubble plot to show the predicted concentration at each receptor. But are those truly ``hot spots'' in Figure~\ref{fig:plot_receptor_grid}, or are they artifacts of our sampling process? It turns out it's the latter, and we can fix it. Because of the way we constructed a regular grid, some of the receptors just happen to be really close to, and sometimes right on top of, the highway network.
-
-\subsection{Setting up the model: the right way}
-
-\subsubsection{Sampling as a function of distance}
-
-To generate a better grid---one that will be more efficient, as well as more representative---we need to do denser sampling closer to the roadways, and sparser sampling further away. Moreover, none of our sampled locations should be too close to the roadway (like right on top of it). To accomplish this, first we'll construct buffers at varying distances from the highways. Then, instead of sampling \textit{within} these buffers, we'll sample along their edges.
-
-<<construct_buffers>>=
-buffer.widths <- c(50, 100, 250, 500, 750, 1000)
-buffers <- lapply(buffer.widths, function(x) gBuffer(highways, width=x))
-@
-
-Again we use the \code{gBuffer} function from the \Rpkg{rgeos} package. We coerce the returned SpatialPolygons objects to SpatialLines objects; then we invoke \code{spsample}, using sampling intervals that decrease with distance from the roadway. The effect is to create a sampling distribution that generally decreases in density as one moves away from the roadway. We could add a bit of noise, if we really wanted to mix it up a bit, but for now this looks pretty good (Figure~\ref{fig:plot_receptor_rings}).
-
-<<sample_rings>>==
-rings <- lapply(buffers, as.SpatialLines)
-perimeter <- function(ring) sum(unlist(lapply(ring@lines, LinesLength)))
-spsample.ring <- function(ring, ring.width, spacing) {
-	pts <- spsample(ring, type="regular", n = perimeter(ring) / spacing)
-	coordnames(pts) <- c('x','y')
-	d <- rep(ring.width, nrow(pts@coords))
-	SpatialPointsDataFrame(pts, data.frame(distance=d, spacing=spacing))
-}
-receptors <- do.call(rbind, mapply(spsample.ring, rings, buffer.widths, 
-		spacing=c(100, 150, 250, 500, 750, 1000)))
-receptors$z <- 1.8
-@
-
-\begin{figure}[ht]
-\begin{center}
-<<label=receptor_rings,fig=TRUE,echo=FALSE>>=
-receptors$z <- 1.8
-predicted.array <- CALINE3.predict(receptors, highway.segments, meteorology[1,], surface.roughness=100.0)
-predicted.data.frame <- data.frame(mean.value=apply(predicted.array, 1, mean), max.value=apply(predicted.array, 1, max))
-receptors <- SpatialPointsDataFrame(receptors, data=predicted.data.frame)
-receptor.concentrations <- geom_point(bubble.aes, as.data.frame(receptors))
-extent.x <- 1000 * c(560, 566)
-extent.y <- 1000 * c(4183, 4188) 
-show(map + easting(limits=extent.x) + northing(limits=extent.y) + highway.centerlines + receptor.concentrations)
-@
-\caption{Close-up of receptors and predicted concentrations, this time sampling from rings around the roadways instead of a Cartesian grid.}
-\label{fig:plot_receptor_rings}
-\end{center}
-\end{figure}
-
-\subsubsection{Interpolating results}
-
-As a final exercise, we'll use the \code{gstat} package to krige the mean predicted concentrations, from the receptors sampled around the roadways, onto a regular grid of moderate resolution (Figure~\ref{fig:plot_interpolation}). This isn't necessarily the best way to go about it; it's just illustrative.
-
-<<xy.grid>>=
-span <- function(x) diff(range(x))
-xy.grid <- function(extent.x, extent.y, cellsize) {
-	cellcentre.offset <- c(min(extent.x), min(extent.y))
-	cells.dim <- ceiling(diff(cbind(extent.x, extent.y)) / cellsize)
-	g <- SpatialGrid(GridTopology(cellcentre.offset, cellsize, cells.dim))
-	coordnames(g) <- c("x","y")
-	return(g)
-}
-@
-<<automap>>=
-library(automap)
-grid <- xy.grid(extent.x, extent.y, c(50, 50))
-k <- autoKrige(mean.value ~ x + y, receptors, grid, nmax=25)
-summary(k)
-@
-
-As you can see, kriging resulted in some estimates that were negative. Clearly this is wrong: no concentration of pollutant is ever less than zero. A better approach might be to perform trans-Gaussian kriging---using a Box-Cox transformation, kriging the transformed values, and then transforming back to our original, non-negative scale. We'll leave that for another vignette.
-
-\begin{figure}[ht]
-\begin{center}
-<<echo=FALSE,results=hide>>=
-png("Rcaline-plot_interpolation.png", width=7.5, height=5, units="in", res=300)
-par(mar=c(5.1, 4.1, 1.1, 2.1))
-@
-<<label=plot_interpolation>>=
-interpolated.values <- geom_tile(aes(x=x, y=y, fill=var1.pred, alpha=var1.pred), as.data.frame(k$krige_output))
-receptor.locations <- geom_point(aes(x=x, y=y), shape=3, size=1.0, alpha=0.5, as.data.frame(receptors))
-zoom <- function(x, a) (x - mean(x)) * a + mean(x)
-map <- map + easting(limits=zoom(extent.x, 1.1)) + northing(limits=zoom(extent.y, 1.1))
-show(map + highway.centerlines + receptor.locations + interpolated.values + 
-	scale_fill_gradient2(low="yellow", mid="orange", high="brown", midpoint=0.025) + 
-	scale_alpha(to=c(0.0, 0.8)))
-@
-<<echo=FALSE,results=hide>>=
-dev.off()
-@
-\includegraphics{Rcaline-plot_interpolation.png}
-\caption{Concentrations interpolated with the use of \code{automap}.}
-\label{fig:plot_interpolation}
-\end{center}
-\end{figure}
-
-Before concluding anything, we should also double-check what happened when we attributed traffic volumes at the feature (polyline) level. Recall that we assigned traffic volumes on the basis of AADT (Annual Average Daily Traffic), which was an attribute of the polyline features in our original shapefile. If there were segments with suspiciously high AADT---as might occur in the case of offramps or onramps---they should be screened more carefully. Predicted concentrations near these features could be biased upward, simply by virtue of there being many child segments having the AADT that was assigned to the parent polyline feature, rather than having the total AADT divided realistically amongst them. Figure~\ref{fig:plot_traffic} maps a color spectrum to AADT quantiles.
-
-\begin{figure}[ht]
-\begin{center}
-<<label=plot_traffic,fig=TRUE>>=
-AADT.breaks <- with(highway.segments, c(0, quantile(AADT)[-1]))
-AADT.scale <- scale_colour_manual("AADT", value = c("green", "yellow", "orange", "red"))
-highway.traffic <- geom_segment(aes(x=x0,y=y0,xend=x1,yend=y1,
-	color=cut(AADT,AADT.breaks,right=TRUE)), highway.segments)
-show(map + easting(limits=extent.x) + northing(limits=extent.y) + highway.traffic + AADT.scale)
-@
-\caption{Traffic volumes (AADT).}
-\label{fig:plot_traffic}
-\end{center}
-\end{figure}
-
-\section{Conclusion}
-
-<<save_results,echo=FALSE>>=
-save.image(file='WestOakland.Rdata')
-@
-
-\subsection{Issues and future work}
-
-For brevity's sake, we've glossed some important issues in the parameterization of the model. For example, how does one determine an appropriate surface roughness length? What to do about calm winds (<1.0 m/s), when terms in the CALINE model start to become ill-defined? What about geocoding errors in the locations of roadway segments? Using an alternate roadway geometry or different model parameters will change the predicted values, sometimes in a significant way. A future vignette is planned to explore and illustrate the sensitivity of Rcaline (or rather, CALINE3) to a range of factors such as these.
-
-More refinement of the model is also possible. For example, it is relatively easy to integrate a diurnal profile of traffic volumes, a useful feature of the later CAL3QHCR variant of the CALINE3 model. Conveniently, the returned array from \code{CALINE3.predict} is an array of hourly values at each receptor (if a full year's worth of meteorological data is supplied, as is customary). Assuming the distribution of AADT from segment to segment does not also vary by hour, one can simply scale the predicted values by the hourly proportions of traffic before taking an average or doing other sorts of aggregation. 
-
-Improving performance with large datasets is also possible. Multiple Rcaline runs also be set up and executed on subsets of the data, then merged. This kind of flexibility allows for the use of distributed processing. For example, we could partition the data by meteorological condition, allocating one-quarter of each year to each of four processors, then combine the results. If the data were partitioned by links or by receptors, we might also reduce the total CPU cycles required by restricting model estimates to only those link-receptor pairs within a given distance (say, 1 km). Both of these techniques have proven useful, although the details are outside the scope of this document.
-
-\subsection{Feedback welcome}
-
-Rcaline is still in development, and feedback is welcome. Please contact david.holstius@berkeley.edu if you have questions, suggestions, or related work to discuss. If you have publicly available data that you would like to contribute to the \Rpkg{Rcaline} package, that would also be welcome. Many people could benefit from the inclusion of more example datasets, including those that have been used in previously published research. 
+The CALINE3 model was originally developed for modeling the dispersion of carbon monoxide (CO) from free-flow traffic, over homogeneous terrain, where wind speeds generally exceed 1.0 m/s. As with any model, care should be exercised to ensure that the practical application is theoretically well founded. For more on the theoretical scope and limitations of the CALINE model family, including terrain and other considerations, see \cite{benson1992review}. 
 
 \section{Acknowledgments}
 
-The author thanks Profs. Edmund Seto and Michael Jerrett of the UC Berkeley School of Public Health, Division of Environmental Health Sciences, as well as the UC Berkeley Center for Information Technology in the Interests of Society (CITRIS), for their generous support of the development of \Rpkg{Rcaline} and \Rpkg{libcaline}. Sincere thanks also go to Phil Martien of the Bay Area Air Quality District (BAAQMD), who generously contributed user testing, feedback, and support leading to the 1.0 release.
+The author thanks Profs. Edmund Seto and Michael Jerrett of the UC Berkeley School of Public Health, Division of Environmental Health Sciences, as well as the UC Berkeley Center for Information Technology in the Interests of Society (CITRIS), for their generous support of the development of \pkg{Rcaline} and \pkg{libcaline}. Sincere thanks also go to Phil Martien of the Bay Area Air Quality District (BAAQMD), who generously contributed user testing, feedback, and support leading to the 1.0 release.
+
+Rcaline is still in development, and feedback is welcome. If you have questions, suggestions, or related work to discuss, or if you have additional datasets that you would like to contribute to the \pkg{Rcaline} package, please contact the package maintainer, \href{mailto:david.holstius@berkeley.edu}{david.holstius@berkeley.edu}.
 
 \bibliography{Rcaline}
 
