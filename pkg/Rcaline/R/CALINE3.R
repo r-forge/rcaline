@@ -216,7 +216,7 @@ CALINE3.predict <- function(
 	# Call native code, allocating array C to hold results
 	array.shape <- c(NR, NM)
 	returned_data <- .Fortran(
-	 	"CALINE3_HOURLY_RECEPTOR_TOTALS", 
+	 	"CALINE3_MATRIX_SINGLE", 
 	 	NR, XR, YR, ZR,
 	 	NL, XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL,
 	 	NM, UM, BRGM, CLASM, MIXHM,

@@ -1,12 +1,20 @@
 is.installed <- function(pkgname) pkgname %in% .packages(TRUE)
 
-#' real4
+#' real64
 #'
-#' Convert a numeric vector to 32-bit (4-byte) precision.
+#' Convert a numeric vector to double precision.
+#'
+#' @param x numeric vector
+#' @return a \link{double}-precision vector
+real64 <- function(x) as.real(x)
+
+#' real32
+#'
+#' Convert a numeric vector to single precision.
 #'
 #' @param x numeric vector
 #' @return a \link{single}-precision vector
-real4 <- function(x) as.single(x)
+real32 <- function(x) as.single(x)
 
 .kiloFormatter <- function(x) x / 1000
 

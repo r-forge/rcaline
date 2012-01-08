@@ -1,8 +1,8 @@
 \name{Receptors}
 \alias{Receptors}
+\alias{Receptors.matrix}
 \alias{Receptors.SpatialPoints}
 \alias{Receptors.SpatialPointsDataFrame}
-\alias{Receptors.matrix}
 \title{Receptor locations}
 \usage{
   Receptors(obj, ...)
@@ -25,7 +25,7 @@
   associated projection}
 }
 \value{
-  SpatialPointsDataFrame
+  SpatialPoints* object
 }
 \description{
   Construct a set of receptors. All coordinates must be in

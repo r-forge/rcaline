@@ -1,6 +1,6 @@
 % \VignetteIndexEntry{Using Rcaline: An Overview} 
 % \VignetteKeywords{Rcaline,CALINE,CALINE3}
-% \VignetteDepends{MBA}
+% \VignetteDepends{MBA,ggplot2}
 % \VignettePackage{Rcaline}
 
 \documentclass[a4paper]{article}
@@ -72,6 +72,7 @@ The conventional way to supply hourly meteorological data is to use an ``ISC-rea
 
 <<meteorology,fig=TRUE,include=FALSE>>=
 met <- Meteorology(met_5801.isc, use='urban')
+require(ggplot2)
 show(ggplot(met))
 @
 
@@ -152,23 +153,23 @@ CO <- Pollutant("Carbon monoxide",
 \pagebreak
 \section{Predicting concentrations}
 
-The CALINE3 algorithm is CPU-intensive. If you're using R on a console (not, say, the Mac R.app GUI), \pkg{Rcaline} will automatically attempt to use the \pkg{foreach} package to do the computations in parallel, using however many cores you have. The speedup should be nearly linear in the number of cores.\footnote{You can also configure the \code{foreach} package to distribute computation across multiple host machines, although that is outside the scope of this example.}
+The CALINE3 algorithm is CPU-intensive. Although it is beyond the scope of this example, you can use the \pkg{foreach} package to do the computations in parallel, using multiple cores or networked hosts. (A future vignette will illustrate this technique.)
 
 \subsection{Running the model}
 
-We use the \code{predict} method to actually run the model. Since the model will actually be run once for every meteorological condition we supply (N=\Sexpr{nrow(met)}), it can be quickest to use only a small sample for the first pass. Here we use 1\% of the meteorology, sampled at random:
+We use the \code{predict} method to actually run the model. Since the model will actually be run once for every meteorological condition we supply (N=\Sexpr{nrow(met)}), it can be quickest to use only a small sample for the first pass. Here we use 0.1\% of the meteorology, sampled at random:
 
 <<run_model,eval=FALSE>>=
-mod <- Caline3Model(lnk, sample.rows(met, p=0.01), rcp, ter, CO)
-pred <- predict(mod)
+mod <- Caline3Model(lnk, sample.rows(met, p=0.001), rcp, ter, CO)
+pred <- predict(mod, units='ppm')
 @
 
 <<load_or_compute_predicted,echo=FALSE>>=
 if(file.exists('SanFrancisco.Rda')) {
 	load('SanFrancisco.Rda')
 } else {
-	mod <- Caline3Model(lnk, sample.rows(met, p=0.01), rcp, ter, CO)
-	pred <- predict(mod)
+	mod <- Caline3Model(lnk, sample.rows(met, p=0.001), rcp, ter, CO)
+	pred <- predict(mod, units='ppm')
 	save(mod, pred, file='SanFrancisco.Rda')
 }
 @
@@ -249,7 +250,7 @@ Note that we replace the primary plot data by using the \code{\%+\%} operator. W
 
 <<interpolation,fig=TRUE,include=FALSE,png=TRUE,pdf=FALSE,eps=FALSE>>=
 require(MBA)
-obs <- cbind(coordinates(spdat), z=spdat$mean)
+obs <- cbind(coordinates(spdat)[,1:2], z=spdat$mean)
 fit <- mba.points(obs, coordinates(grd), verbose=FALSE)
 srf <- with(fit, as.data.frame(xyz.est))
 map <- ggplot(agg, bounds=region) %+% srf

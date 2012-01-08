@@ -6,12 +6,9 @@
 #' @keywords links
 #' @export
 #' @examples
-#' LinkType(rep('AG', 5))
+#' LinkType(rep(0, 10))
 LinkType <- function(x) {
-	factor(x, 
-		levels = c("AG", "BR", "FL", "DP"), 
-		labels = c("At Grade", "Bridge", "Fill", "Depressed")
-	)
+	factor(x, levels = 1:4, labels = c("AG", "BR", "FL", "DP"))
 }
 
 #' FreeFlowLinks
@@ -36,13 +33,13 @@ LinkType <- function(x) {
 #' @return a FreeFlowLinks object
 #' @keywords links
 #' @export
-FreeFlowLinks <- function(spobj, vehiclesPerHour, emissionFactor, width, height=0.0, classification='AG', ...) 
+FreeFlowLinks <- function(spobj, vehiclesPerHour, emissionFactor, width, height=0.0, classification=LinkType(0), ...) 
 {
 	if(missing(height))
 		height <- 0.0
 	
 	if(missing(classification))
-		classification <- 'AG'
+		classification <- LinkType(1)
 		
 	args <- as.list(match.call())[-1]
 	formalArgs <- args[names(args) %in% names(formals())]
@@ -52,9 +49,9 @@ FreeFlowLinks <- function(spobj, vehiclesPerHour, emissionFactor, width, height=
 	obj$centerlines <- spobj
 	obj$transformArgs <- formalArgs[-1]
 	if(is.null(obj$transformArgs$height))
-		 obj$transformArgs$height = height
+            obj$transformArgs$height = height
 	if(is.null(obj$transformArgs$classification))
-		 obj$transformArgs$classification = classification
+            obj$transformArgs$classification = classification
 	
 	# Precompute the segments
 	attr(obj, ".data") <- as.data.frame(obj)

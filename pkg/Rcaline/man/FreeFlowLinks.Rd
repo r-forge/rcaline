@@ -3,7 +3,7 @@
 \title{FreeFlowLinks}
 \usage{
   FreeFlowLinks(spobj, vehiclesPerHour, emissionFactor,
-    width, height = 0, classification = "AG", ...)
+    width, height = 0, classification = LinkType(0), ...)
 }
 \arguments{
   \item{spobj}{a SpatialLinesDataFrame object}

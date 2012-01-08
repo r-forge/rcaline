@@ -1,3 +1,4 @@
+require(Rcaline)
 data(SanFrancisco, package='Rcaline')
 
 bb <- structure(c(19000, 4188000, 28000, 4196000), 

@@ -22,8 +22,8 @@ Parameters <- function(surfaceRoughness, averagingTime=60.0, settlingVelocity=0.
 as.Fortran.Parameters <- function(x) {
 	dat <- as.data.frame.list(x)
 	with(dat, list(
-		VS = real4(settlingVelocity),
-		VD = real4(depositionVelocity)
+		VS = real64(settlingVelocity),
+		VD = real64(depositionVelocity)
 	))
 }
 

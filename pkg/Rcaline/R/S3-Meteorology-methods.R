@@ -25,10 +25,10 @@ ggplot.Meteorology <- function(data, ...) {
 as.Fortran.Meteorology <- function(x) {
 	dat <- as.data.frame(x)
 	with(dat, list(	
-		UM = real4(windSpeed),
-		BRGM = real4(windBearing),
+		UM = real64(windSpeed),
+		BRGM = real64(windBearing),
 		CLASM = as.integer(pmin(stabilityClass, Pasquill(6))),
-		MIXHM = real4(mixingHeight)
+		MIXHM = real64(mixingHeight)
 	))
 }
 

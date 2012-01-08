@@ -77,15 +77,15 @@ as.data.frame.FreeFlowLinks <- function(x, row.names, optional, ...) {
 as.Fortran.FreeFlowLinks <- function(x) {
 	dat <- as.data.frame(x)
 	with(dat, list(
-		XL1 = real4(XL1),
-		YL1 = real4(YL1),
-		XL2 = real4(XL2),
-		YL2 = real4(YL2),
-		WL = real4(width),
-		HL = real4(height),
-		TYP = as.character(classification),
-		VPHL = real4(vehiclesPerHour),
-		EFL = real4(emissionFactor)
+		XL1 = real64(XL1),
+		YL1 = real64(YL1),
+		XL2 = real64(XL2),
+		YL2 = real64(YL2),
+		WL = real64(width),
+		HL = real64(height),
+		NTYP = as.integer(classification),  # was: TYP = as.character(classification)
+		VPHL = real64(vehiclesPerHour),
+		EFL = real64(emissionFactor)
 	))
 }
 

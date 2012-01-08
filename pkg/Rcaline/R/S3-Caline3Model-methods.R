@@ -1,16 +1,15 @@
 #' predict.Caline3Model
 #'
 #' @param object a \code{\link{Caline3Model}} object
-#' @param .parallel logical; attempt to use the \code{foreach} package to exploit multiple cores or hosts?
+#' @param units one of 'ppm', 'ug/m3', or 'mg/m3'
 #'
 #' @return matrix of predicted values
 #'
 #' @keywords predict model
 #' @S3method predict Caline3Model
 #' @importFrom stats predict
-#' @rdname Caline3Model-methods
 #' @export
-predict.Caline3Model <- function(object, .parallel=TRUE) {
+predict.Caline3Model <- function(object, units='ppm') {
 	
 	stopifnot(inherits(object, 'Caline3Model'))
 	lnk <- links(object)
@@ -19,51 +18,43 @@ predict.Caline3Model <- function(object, .parallel=TRUE) {
 	ter <- terrain(object)
 	pol <- pollutant(object)
 	
-	# Default to sequential processing
-	if(missing(.parallel)) 
-		.parallel <- FALSE
-	
-	# Disallow parallel processing in Mac OS X "R.app" GUI
-	if(.Platform$GUI %in% c("AQUA") && .parallel==TRUE) {
-		warning("Using R.app precludes safe use of multicore. Try xterm instead?")
-		.parallel = FALSE
-		registerDoSEQ()
-	}
-	
-	# This should be quick
-	# TODO: split by receptors or meteorology, whichever is greater
 	NR <- nrow(as.data.frame(rcp))
-	stopifnot(NR > 0)
 	NM <- nrow(as.data.frame(met))
 	NL <- nrow(as.data.frame(lnk))
-	
-	if(.parallel == TRUE) {
-	
-		require(foreach)
-		require(multicore)
-		n.cores <- multicore:::detectCores() - 1
-		message('Using ', n.cores, ' cores')
-		require(doMC)
-		registerDoMC(cores=n.cores)
-	
-		if(NR > NM) {
-			# Split by rcp
-			k <- sort(rep(1:n.cores, length.out=NR))
-			jobs <- suppressWarnings(split(rcp, k))
-			pred <- foreach(rcp=iter(jobs), .combine=rbind) %dopar% 
-				run.CALINE3(lnk, met, rcp, ter, pol)
-		} else {
-			# Split by pred conditions
-			k <- sort(rep(1:n.cores, length.out=NM))
-			jobs <- suppressWarnings(split(met, k))
-			pred <- foreach(met=iter(jobs), .combine=cbind) %dopar% 
-				run.CALINE3(lnk, met, rcp, ter, pol)
-		}
-		
-	} else {
-		pred <- run.CALINE3(lnk, met, rcp, ter, pol)
-	}	
+	      
+      # Initialize the full matrix
+      pred <- matrix(NA, 
+		nrow = nrow(as.data.frame(rcp)), 
+		ncol = nrow(as.data.frame(met)), 
+		dimnames = list(rownames(rcp), rownames(met)))	
 
+	# Compute only the conditions (columns) for which wind speed >= 1.0
+	non.calm <- with(met, which(windSpeed >= 1.0))
+	args <- c(
+		as.Fortran(rcp),
+            as.Fortran(lnk), 
+		as.Fortran(met[non.calm,]), 
+		list(
+			ATIM = as.single(60.0),
+			Z0 = as.single(ter$surfaceRoughness),
+			VS = as.single(pol$settlingVelocity),
+			VD = as.single(pol$depositionVelocity)))		
+	computed <- do.call("CALINE3", args)
+
+	# Assign the computed estimates back to the matrix
+	stopifnot(nrow(computed) == nrow(pred))
+	stopifnot(ncol(computed) == length(non.calm))
+	pred[,non.calm] <- computed
+
+      if(units == 'ppm') {
+		pred <- pred * 0.0245 / pol$molecularWeight
+	} else if (units == 'mg/m3') {
+	      pred <- pred * 1.0e3
+	} else {
+	      # Default is ug/m3
+	}
+
+	class(pred) <- c("HourlyConcentrations", "matrix")
 	attr(pred, "model") <- object
 	return(pred)
 }
@@ -72,10 +63,11 @@ predict.Caline3Model <- function(object, .parallel=TRUE) {
 #'
 #' Plot model elements using ggplot2.
 #'
+#' @param data a Caline3Model object
+#'
 #' @keywords ggplot ggplot2
 #' @importFrom ggplot2 ggplot
 #' @S3method ggplot Caline3Model
-#' @rdname Caline3Model-methods
 #' @export
 ggplot.Caline3Model <- function(data, ...) {
 	receptor.data <- as.data.frame(data$receptors)

@@ -1,7 +1,7 @@
 \name{Rectangle}
 \alias{Rectangle}
-\alias{Rectangle.Spatial}
 \alias{Rectangle.matrix}
+\alias{Rectangle.Spatial}
 \title{Rectangle}
 \usage{
   Rectangle.matrix(obj)

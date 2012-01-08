@@ -1,8 +1,8 @@
-\name{real4}
-\alias{real4}
-\title{real4}
+\name{real32}
+\alias{real32}
+\title{real32}
 \usage{
-  real4(x)
+  real32(x)
 }
 \arguments{
   \item{x}{numeric vector}
@@ -11,6 +11,6 @@
   a \link{single}-precision vector
 }
 \description{
-  Convert a numeric vector to 32-bit (4-byte) precision.
+  Convert a numeric vector to single precision.
 }
 

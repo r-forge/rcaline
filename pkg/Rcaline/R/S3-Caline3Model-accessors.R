@@ -28,7 +28,7 @@ receptors <- function(model, ...) UseMethod("receptors")
 #' @export
 receptors.default <- function(model, ...) {
 	rcp <- model$receptors
-	expect_true(identical(coordnames(rcp), c("x", "y")))
+	stopifnot(identical(coordnames(rcp), c('x', 'y', 'z')))
 	return(rcp)
 }
 

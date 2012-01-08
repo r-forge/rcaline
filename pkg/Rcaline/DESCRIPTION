@@ -8,12 +8,9 @@ Maintainer: David Holstius <david.holstius@berkeley.edu>
 Depends:
     methods,
     sp,
-    ggplot2,
-    rgeos,
-    multicore,
-    doMC,
-    foreach
+    rgeos
 Suggests:
+    ggplot2,
     maptools,
     automap
 Description: Predicts steady-state aerosol concentrations
@@ -32,15 +29,16 @@ References: Benson, P. (1979) CALINE-3: A versatile
 Collate:
     'Rcaline-internal.R'
     'Rcaline.R'
+    'libcaline.R'
     'utils.R'
     'read.ISC.R'
     'CALINE3.R'
+    'S3-FortranArrays.R'
     'geometry.R'
     'S3-Caline3Model-accessors.R'
     'S3-Caline3Model-methods.R'
     'S3-Caline3Model.R'
     'S3-Concentrations-methods.R'
-    'S3-FortranArrays.R'
     'S3-Links-accessors.R'
     'S3-Links-methods.R'
     'S3-Links.R'

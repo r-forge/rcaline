@@ -11,7 +11,7 @@
   Create a vector of link classifications.
 }
 \examples{
-LinkType(rep('AG', 5))
+LinkType(rep(0, 10))
 }
 \keyword{links}
 

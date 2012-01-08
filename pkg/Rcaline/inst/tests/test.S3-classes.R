@@ -36,26 +36,4 @@ expect_equal(terrain(mod), ter)
 expect_equal(pollutant(mod), CO)
 
 # # Compute predicted concentrations
-pred <- predict(mod, .parallel=FALSE)
-# 
-# load_all('Rcaline', TRUE)
-# agg <- aggregate(pred)
-# as(agg, 'SpatialPointsDataFrame')
-# 
-# load_all('Rcaline', TRUE)
-# ggplot(mod)
-# 
-# load_all('Rcaline', TRUE)
-# ggplot(agg, fill=mean, color=mean)
-# ggplot(agg, select=c('mean', 'median', 'max'), nrow=1)
-
-# test_that("Parallel vs sequential", {
-
-    # sequential <- predict(mod, .parallel=FALSE)
-	# parallel <- predict(mod, .parallel=TRUE)
-      
-    # expect_equal(nrow(rcp), nrow(parallel$predicted), nrow(sequential$predicted))
-    # expect_equal(nrow(met), ncol(parallel$predicted), ncol(sequential$predicted))
-    # expect_true(all.equal(parallel$predicted, sequential$predicted, check.attributes=FALSE))
-
-# })
+pred <- predict(mod, units='ppm')

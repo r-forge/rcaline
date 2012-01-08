@@ -10,8 +10,8 @@
     suppressPackageStartupMessages(require(rgdal))
     dsn <- normalizePath(dirname(file))
     layer <- gsub(".shp$", "", basename(file))
-	message('Reading ', layer, ' from ', dsn)
-	stopifnot(file.exists(dsn))
+    message('Reading ', layer, ' from ', dsn)
+    stopifnot(file.exists(dsn))
     spobj <- rgdal::readOGR(dsn, layer, ...)
     return(spobj)
 }
