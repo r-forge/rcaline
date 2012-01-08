@@ -1,5 +1,7 @@
 require(sp)
-load_all("Rcaline", TRUE)
+require(Rcaline)
+
+CO <- Pollutant("CO", molecularWeight = 28.0)
 
 .link <- function(ID, XL1, YL1, XL2, YL2) {
 	coords <- matrix(c(XL1, YL1, XL2, YL2), ncol=2, byrow=TRUE)
