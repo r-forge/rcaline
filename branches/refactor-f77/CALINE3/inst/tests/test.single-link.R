@@ -1,6 +1,5 @@
 require(CALINE3)
 require(testthat)
-
 context("single link")
 
 XR <- 30.0

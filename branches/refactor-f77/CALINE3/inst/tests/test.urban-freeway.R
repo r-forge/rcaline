@@ -1,6 +1,3 @@
-require(CALINE3)
-require(testthat)
-
 context("urban freeway")
 
 NR <- 12

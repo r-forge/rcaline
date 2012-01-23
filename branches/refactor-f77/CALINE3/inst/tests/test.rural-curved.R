@@ -1,6 +1,3 @@
-require(CALINE3)
-require(testthat)
-
 context("rural curved")
 
 NR <- 4

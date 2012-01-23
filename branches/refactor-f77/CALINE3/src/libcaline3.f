@@ -1,28 +1,40 @@
-C   Copyright © 2010 The Regents of the University of California (Regents).
-C	All Rights Reserved. Permission to use, copy, modify, and distribute
-C	this software and its documentation for educational, research, and
-C	not-for-profit purposes, without fee and without a signed licensing
-C	agreement, is hereby granted, provided that the above copyright notice,
-C	this paragraph and the following two paragraphs appear in all copies,
-C	modifications, and distributions. Contact The Office of Technology
-C	Licensing, UC Berkeley, 2150 Shattuck Avenue, Suite 510, Berkeley, CA
-C	94720-1620, (510) 643-7201, for commercial licensing opportunities.
-C	
-C   Created by David Holstius, Department of Environmental Health Sciences,
-C	University of California, Berkeley.
-C	
-C	IN NO EVENT SHALL REGENTS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
-C	SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS,
-C	ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
-C	REGENTS HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-C	
-C	REGENTS SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT
-C	LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-C	PARTICULAR PURPOSE. THE SOFTWARE AND ACCOMPANYING DOCUMENTATION, IF ANY,
-C	PROVIDED HEREUNDER IS PROVIDED "AS IS". REGENTS HAS NO OBLIGATION TO
-C	PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
-C
-       SUBROUTINE CALINE3_MATRIX(
+      REAL*4 FUNCTION HYPOT(XD,YD)
+      REAL*4 XD, YD
+      HYPOT=SQRT(XD*XD+YD*YD)
+      RETURN
+      END FUNCTION
+      
+      SUBROUTINE SIGMA(CLAS,ATIM,Z0,SY1,SY10,SZ10)
+      
+      REAL*4 AZ(6),AY1(6),AY2(6)
+      DATA AZ/1112.,556.,353.,219.,124.,56./                            
+      DATA AY1/0.46,0.29,0.18,0.11,0.087,0.057/                         
+      DATA AY2/1831.,1155.,717.,438.,346.,227./
+      
+      INTEGER CLAS      ! stability class (A-F)
+      REAL*4 ATIM       ! averaging time (minutes)
+      REAL*4 Z0         ! surface roughness (cm)
+      REAL*4 SY1        ! sigma_y at 1 km
+      REAL*4 SY10       ! sigma_y at 10 km
+      REAL*4 SZ10       ! sigma_z at 10 km
+      
+      IF (CLAS.GT.6) CLAS=6
+      AFAC=(ATIM/3.0)**.2                                               
+      SY1=ALOG(AY1(CLAS)*((Z0/3.)**.2)*AFAC)                            
+      SY10=ALOG(AY2(CLAS)*((Z0/3.)**.07)*AFAC)                          
+      PY1=EXP(SY1)                                                      
+      PY2=(SY10-SY1)/DREF                                               
+      SZ10=ALOG(AZ(CLAS)*((Z0/10.)**.07)*AFAC)         
+      !PRINT *, 'CLAS is: ', CLAS
+      !PRINT *, 'AY1(CLAS), AY2(CLAS) are: ', AY1(CLAS), AY2(CLAS) 
+      !PRINT *, 'AFAC, ATIM are: ', AFAC, ATIM
+      !PRINT *, 'AFAC, ATIM are: ', AFAC, ATIM
+      !PRINT *, 'SY1, SY10 are: ', SY1, SY10
+      !PRINT *, 'PY1, PY2 are: ', PY1, PY2                 
+      RETURN
+      END SUBROUTINE
+      
+      SUBROUTINE CALINE3_MATRIX(
      +                   NR,      ! number of receptors
      +                   XR,      ! x-coordinates of receptors
      +                   YR,      ! y-coordinates of receptors
@@ -37,137 +49,79 @@ C
      +                   NTYP,    ! link classifications *as integers*
      +                   VPHL,    ! traffic volume (per link)
      +                   EFL,     ! emission factor (per link)
-     +                   UM,      ! wind speeds
-     +                   BRGM,    ! wind bearings
-     +                   CLASM,   ! atmospheric stability classes
-     +                   MIXHM,   ! mixing heights
+     +                   U,       ! wind speed
+     +                   BRG,     ! wind bearing
+     +                   CLAS,    ! atmospheric stability class
+     +                   MIXH,    ! mixing height
      +                   ATIM,    ! averaging time
      +                   Z0,      ! surface roughness
      +                   VS,      ! settling velocity
      +                   VD,      ! deposition velocity 
      +                   C)       ! resulting concentrations (per receptor)
-C
-C    Computes incremental concentrations at a number of receptors, 
-C    given an array of link geometries + traffic volumes, an array of 
-C    meteorological conditions, and parameters describing the site.
-C
-C    The returned value will be an array of dimension NM x NL x NR,
-C    where NM is the number of meteorological conditions, NL is the 
-C    number of roadway links, and NR is the number of receptors.
-C
-C    Peak concentrations and average concentrations can be computed as
-C    margined values from the returned array.
-C
-		
-      PARAMETER(NM=1)
+
+	PARAMETER(PI=3.1415926,RAD=PI/180.,DEG=180./PI)                                                       
+      PARAMETER(DREF=ALOG(10000.))
+      
       DIMENSION C(NR,NL)
         
       DOUBLE PRECISION HYP,SIDE,FAC2,PD,A,B,L,D,                        
      +    XPRI,YPRI,APRI,BPRI,LPRI,DPRI,XD,YD,D1,D2,                    
-     +    LL(NL),INTG(6)                                                
+     +    LL,INTG(6)                                                
      
       INTEGER CLAS
       
-      REAL MOWT,NE,LIM,KZ,LB,INC,MIXH
+      REAL MOWT,NE,LIM,KZ,LB,INC
       
       REAL V1,YE,Z,EXP1,EXP2,DVIR,CSL2
       
       REAL*4 XR(NR),YR(NR),ZR(NR)
       REAL*4 XL1(NL),YL1(NL),XL2(NL),YL2(NL),WL(NL),HL(NL)
       REAL*4 VPHL(NL),EFL(NL)
-      REAL*4 UM(NM),BRGM(NM),MIXHM(NM)
-      INTEGER CLASM(NM)
+      REAL U,BRG,MIXH
 
       INTEGER NTYP(NL)
       PARAMETER(NTYP_AG=1,NTYP_BR=2,NTYP_FL=3,NTYP_DP=4)
       
-      DIMENSION AZ(6),AY1(6),AY2(6),Y(6),WT(5)
-      
-      DATA AZ/1112.,556.,353.,219.,124.,56./                            
-      DATA AY1/0.46,0.29,0.18,0.11,0.087,0.057/                         
-      DATA AY2/1831.,1155.,717.,438.,346.,227./                         
+      DIMENSION Y(6),WT(5)    
       DATA WT/0.25,0.75,1.,0.75,0.25/     
 C                                                                       
 C                                                                       
 C *****  INITIALIZATION OF CONSTANTS AND COUNTERS  *****                
-C            
-      PGCT=1                                                            
-      PI=3.1415926                                                      
-      RAD=PI/180.                                                       
-      DEG=180./PI                                                       
-      MOWT=28.                                                          
-C     ! MOLECULAR WEIGHT OF CO                                          
-      FPPM=0.0245/MOWT                                                  
-C                                                                       
-      DREF=ALOG(10000.)                                                 
-      
+C                  
       V1=VD-VS/2.
       
-C     MET LOOP BEGINS
-      DO 8500 IM=1,NM
-
-C     FOR WIND SPEEDS LESS THAN 1.0 m/s, SKIP CALCULATIONS;
-C     OTHERWISE, ZERO CONCENTRATIONS FOR ALL RECEPTORS.
-      U=UM(IM)
-C      PRINT *, 'U is: ', U
-      IF (U.LT.1) THEN
-        GOTO 8500
-      ELSE
- 	    DO IR=1,NR 
-          C(IR,IM)=0.
-        END DO
-      END IF
-      
-      BRG=BRGM(IM)
-      CLAS=CLASM(IM)
-      MIXH=MIXHM(IM)
 C      PRINT *, 'BRG, CLAS, MIXH are: ', BRG,CLAS,MIXH
       
       DO 1050 I=1,NL
-      LL(I)=SQRT((XL1(I)-XL2(I))**2+(YL1(I)-YL2(I))**2)
-C     ! LINK LENGTH
+      
+      !LL(I)=SQRT((XL1(I)-XL2(I))**2+(YL1(I)-YL2(I))**2)
+      LL=HYPOT(XL1(I)-XL2(I),YL1(I)-YL2(I))
+      
  1050 CONTINUE           
             
 C        U = WIND SPEED (M/S)                                           
-C      BRG = WIND DIRECTION (DEGREES)                                   
+C      BRG = WIND BEARING (DEGREES)   
+C      HDG = WIND HEADING (DEGREES)                           
 C     CLAS = STABILITY CLASS (A-F)                                      
 C     MIXH = MIXING HEIGHT (M)                                          
 C      AMB = AMBIENT CONCENTRATION (PPM)                                
 C                 
-      BRG1=BRG                                                          
-C     ! WIND ANGLE FOR OUTPUT                                           
-C                                                                       
-      BRG=BRG+180.                                                      
-      IF (BRG.GE.360.) BRG=BRG-360.                                     
+      HDG=BRG+180.                                                      
+      IF (HDG.GE.360.) HDG=HDG-360.                                     
 C     ! CONVERSION TO VECTOR ORIENTATION                                
 C                                                                       
 C ***  VIRTUAL DISPLACEMENT VECTORS                                     
 C                                                                       
-      XVEC=COS(RAD*(450.-BRG))                                          
-      YVEC=SIN(RAD*(450.-BRG))                                    
+      XVEC=COS(RAD*(450.-HDG))                                          
+      YVEC=SIN(RAD*(450.-HDG))                                    
 C                                                                       
 C *****  CORRECTIONS FOR AVERAGING TIME AND SURFACE ROUGHNESS           
 C     
-      IF (CLAS.GT.6) CLAS=6
-
-      AFAC=(ATIM/3.0)**.2                                               
-      SY1=ALOG(AY1(CLAS)*((Z0/3.)**.2)*AFAC)                            
-C     ! ALOG(SIGMA Y) AT 1 M                                            
-      SY10=ALOG(AY2(CLAS)*((Z0/3.)**.07)*AFAC)                          
-C     ! ALOG(SIGMA Y) AT 10 KM                                          
-      PY1=EXP(SY1)                                                      
-      PY2=(SY10-SY1)/DREF                                               
-      SZ10=ALOG(AZ(CLAS)*((Z0/10.)**.07)*AFAC)                          
-C     ! ALOG(SIGMA Z) AT 10 KM                                          
+      CALL SIGMA(CLAS,ATIM,Z0,SY1,SY10,SZ10)
+      
 C                                                                       
 C *****  LINK LOOP  *****                                               
 C     
-      !PRINT *, 'CLAS is: ', CLAS
-      !PRINT *, 'AY1(CLAS), AY2(CLAS) are: ', AY1(CLAS), AY2(CLAS) 
-      !PRINT *, 'AFAC, ATIM are: ', AFAC, ATIM
-      !PRINT *, 'AFAC, ATIM are: ', AFAC, ATIM
-      !PRINT *, 'SY1, SY10 are: ', SY1, SY10
-      !PRINT *, 'PY1, PY2 are: ', PY1, PY2
 
       DO 8000 IL=1,NL    
       
@@ -189,24 +143,16 @@ C                                                   (METER*SEC)
       XD=XL2(IL)-XL1(IL)                                                
       YD=YL2(IL)-YL1(IL)                                                
       ABSXD=DABS(XD)                                                    
-      IF(ABSXD.GT.LL(IL))LL(IL)=ABSXD                                   
-      LB=DEG*(DACOS(DABS(XD)/LL(IL)))                                  
-C     ! LINK BEARING                                                    
-      IF (XD.GT.0. .AND.                                                
-     +    YD.GE.0.) LB=90.-LB                                           
-      IF (XD.GE.0. .AND.                                                
-     +    YD.LT.0.) LB=90.+LB                                           
-      IF (XD.LT.0. .AND.                                                
-     +    YD.LE.0.) LB=270.-LB                                          
-      IF (XD.LE.0. .AND.                                                
-     +    YD.GT.0.) LB=270.+LB                                          
+      IF(ABSXD.GT.LL)LL=ABSXD                                   
 
-C     LBRG(IL)=LB                                                       
-
-      !PRINT *, 'LL(IL), LB are:', LL(IL), LB
+      LB=DEG*(DACOS(DABS(XD)/LL))                                  
+      IF (XD.GT.0. .AND. YD.GE.0.) LB=90.-LB                                           
+      IF (XD.GE.0. .AND. YD.LT.0.) LB=90.+LB                                           
+      IF (XD.LT.0. .AND. YD.LE.0.) LB=270.-LB                                          
+      IF (XD.LE.0. .AND. YD.GT.0.) LB=270.+LB                                          
 
 C     ! LINK BEARING MATRIX FOR OUTPUT                                  
-      PHI=ABS(BRG-LB)                                                   
+      PHI=ABS(HDG-LB)                                                   
 C     ! WIND ANGLE WITH RESPECT TO LINK                                 
       IF (PHI.LE.90.) GO TO 7600                                        
       IF (PHI.GE.270.) GO TO 5000                                       
@@ -259,12 +205,12 @@ C
       
       A=(XR(IR)-XL1(IL))**2+(YR(IR)-YL1(IL))**2                         
       B=(XR(IR)-XL2(IL))**2+(YR(IR)-YL2(IL))**2                         
-      L=(B-A-LL(IL)**2)/(2.*LL(IL))                                     
+      L=(B-A-LL**2)/(2.*LL)                                     
 C     ! OFFSET LENGTH                                                   
       IF (A.GT.L**2) D=DSQRT(A-L**2)                                    
       IF (A.LE.L**2) D=0.                                               
 C     ! RECEPTOR DISTANCE                                               
-      UWL=LL(IL)+L                                                      
+      UWL=LL+L                                                      
 C     ! UPWIND LENGTH                                                   
       DWL=L                                                             
 C     ! DOWNWIND LENGTH                                                 
@@ -274,7 +220,7 @@ C     ! DOWNWIND LENGTH
       YPRI=YR(IR)+DVIR*YVEC                                             
       APRI=(XPRI-XL1(IL))**2+(YPRI-YL1(IL))**2                          
       BPRI=(XPRI-XL2(IL))**2+(YPRI-YL2(IL))**2                          
-      LPRI=(BPRI-APRI-LL(IL)**2)/(2.*LL(IL))                            
+      LPRI=(BPRI-APRI-LL**2)/(2.*LL)                            
       IF (APRI.GT.LPRI**2) DPRI=DSQRT(APRI-LPRI**2)                     
       IF (APRI.LE.LPRI**2) DPRI=0.                                      
       IF (DPRI.LT.D) D=-D                                               
@@ -491,7 +437,5 @@ C
  6000 CONTINUE                             
 
  8000 CONTINUE    
-
- 8500 CONTINUE    
       
  9000 END SUBROUTINE

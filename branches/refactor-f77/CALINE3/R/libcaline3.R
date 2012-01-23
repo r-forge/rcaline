@@ -22,6 +22,7 @@
 #' @param MIXH mixing heights
 #' @param ATIM averaging time, in minutes
 #' @param Z0 surface roughness, in centimeters
+#' @param .coerce force arguments to be cast to correct type
 #' 
 #' @return matrix of concentrations, in ug/m3
 #'
@@ -76,3 +77,4 @@ CALINE3.array <- function(
 	return(C)
 
 }
+
