@@ -1,7 +1,7 @@
 require(CALINE3)
 require(testthat)
 
-context("libcaline3")
+context("single link")
 
 XR <- 30.0
 YR <- 0.0
@@ -37,6 +37,9 @@ test_that('single link', {
 	)
 
 	C.ppm <- C.ugm3 * 0.0245 / 28.0
-	expect_equal(4.6, round(C.ppm, digits=1))
+	expect_equal(
+		round(C.ppm, digits=1),
+		array(4.6, c(1, 1))
+	)
 
 })

@@ -1,7 +1,7 @@
 require(CALINE3)
 require(testthat)
 
-context("libcaline3")
+context("rural curved")
 
 NR <- 4
 XR <- c(400, 100, 200, 100)
@@ -18,6 +18,20 @@ HL <- rep(0, NL)
 WL <- rep(28, NL)
 VPHL <- rep(8500, NL)
 EFL <- rep(30, NL)
+
+test_that('array lengths', {
+	expect_equal(length(XR), NR)
+	expect_equal(length(YR), NR)
+	expect_equal(length(ZR), NR)
+	expect_equal(length(XL1), NL)
+	expect_equal(length(YL1), NL)
+	expect_equal(length(XL2), NL)
+	expect_equal(length(YL2), NL)
+	expect_equal(length(HL), NL)
+	expect_equal(length(WL), NL)
+	expect_equal(length(VPHL), NL)
+	expect_equal(length(EFL), NL)
+})
 
 U <- 1
 BRG <- 45
@@ -36,11 +50,12 @@ C.ugm3 <- CALINE3.array(
 	ATIM, Z0, VS, VD
 )
 
-C.ppm <- C.ugm3 * 0.0245 / 28.0
-
-expect_equal(round(C.ppm, digits=1),
-	structure(c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4.8, 
-		0, 0, 0, 0, 0, 1.5, 0, 0, 0, 3.7, 0, 0, 0, 2.1, 0, 0, 3.1, 0.4, 
-		0.1, 0, 0, 0, 1.3, 0.5), .Dim = c(4L, 10L)
+test_that('rural curved', {
+	C.ppm <- C.ugm3 * 0.0245 / 28.0
+	expect_equal(round(C.ppm, digits=1),
+		structure(c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4.8, 
+			0, 0, 0, 0, 0, 1.5, 0, 0, 0, 3.7, 0, 0, 0, 2.1, 0, 0, 3.1, 0.4, 
+			0.1, 0, 0, 0, 1.3, 0.5), .Dim = c(4L, 10L)
+		)
 	)
-)
+})
