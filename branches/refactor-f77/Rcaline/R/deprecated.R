@@ -1,7 +1,9 @@
 read.ISC <- function(
 	file
 ) {
+	
 	warning("read.ISC() is deprecated. See ?Meteorology or ?ISCFile for more.")
+	
 	header <- readLines(file, 1)
 	header.tokens <- strsplit(header, '\\s+')[[1]]
 	result <- lapply(as.list(header.tokens)[-1], as.integer)

@@ -6,6 +6,7 @@ Date: 2012-01-08
 Author: David Holstius
 Maintainer: David Holstius <david.holstius@berkeley.edu>
 Depends:
+    CALINE3,
     methods,
     sp,
     rgeos

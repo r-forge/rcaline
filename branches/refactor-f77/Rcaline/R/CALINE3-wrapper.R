@@ -144,50 +144,53 @@ CALINE3.predict <- function(
 	XR, YR, ZR,
 	XL1, YL1, XL2, YL2, WL, HL, TYP, VPHL, EFL,
 	UM, BRGM, CLASM, MIXHM,
-	ATIM, Z0, VS, VD
+	ATIM, Z0, VS, VD,
+	.check = TRUE
 ) {	
 	
-	#message("Entering .caline3.receptor_totals()")
-	#.call <- match.call()
-	#print(.call)
-		
-	# Receptor specifications
 	NR <- as.integer(length(XR))
-	stopifnot( all.equal(NR, length(YR), length(ZR)))
-	if(any(is.na(c(XR,YR,ZR))))
-		stop("Receptor coordinates cannot include NA values.")
-
-	# Link specifications
 	NL <- as.integer(length(XL1))
-	if(any(is.na(c(XL1,YL1,XL2,YL2))))
-		stop("Link coordinates cannot include NA values.")
-	if(any(is.na(WL)))
-		stop("Link widths cannot include NA values.")
-	if(any(is.na(HL)))
-		stop("Link heights cannot include NA values.")
-	if(any(is.na(TYP)))
-		stop("Link classifications cannot include NA values.")
-	if(any(is.na(VPHL)))
-		stop("Link flows cannot include NA values.") 
-	if(any(is.na(EFL)))
-		stop("Link emission factors cannot include NA values.")
-	
-	# Meteorology specifications.
 	NM <- as.integer(length(UM))
-	stopifnot( all.equal(NM, length(BRGM), length(CLASM), length(MIXHM)))
-	if(any(is.na(UM)))
-		stop("Wind speeds cannot include NA values. See ?read.ISC for more.")
-	if(any(is.na(BRGM)) || any(BRGM < 0) || any(BRGM > 360))
-		stop("Wind bearings must be between 0 and 360 degrees, and cannot include NA values. See ?read.ISC for more.")
-	if(any(is.na(CLASM)))
-		stop("Stability classes must not include NA values. See ?read.ISC for more.")
-	if(any(CLASM > 6)) {
-		CLASM <- pmin(CLASM, 6)
-		warning("Rounding down stability class 7 to class 6.")
-	}
-	if(any(is.na(MIXHM)) || any(MIXHM < 0))
-		stop("Mixing heights must not be negative, and cannot include NA values.")
 		
+	if (.check) {
+
+		stopifnot( all.equal(NR, length(YR), length(ZR)))
+		stopifnot( all.equal(NM, length(BRGM), length(CLASM), length(MIXHM)))
+		stopifnot(all.equal(NL, length(YL1), length(XL2), length(YL2),
+			length(WL), length(HL), length(NTYP), length(VPHL), length(EFL)))
+
+		stopifnot(lapply(list(XR, YR, ZR), is.numeric) == TRUE)
+		stopifnot(lapply(list(XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL), is.numeric) == TRUE)
+		stopifnot(lapply(list(UM, BRGM, CLASM, MIXHM), is.numeric) == TRUE)
+
+		if(any(is.na(c(XR,YR,ZR))))
+			stop("Receptor coordinates cannot include NA values.")
+		if(any(is.na(c(XL1,YL1,XL2,YL2))))
+			stop("Link coordinates cannot include NA values.")
+		if(any(is.na(WL)))
+			stop("Link widths cannot include NA values.")
+		if(any(is.na(HL)))
+			stop("Link heights cannot include NA values.")
+		if(any(is.na(TYP)))
+			stop("Link classifications cannot include NA values.")
+		if(any(is.na(VPHL)))
+			stop("Link flows cannot include NA values.") 
+		if(any(is.na(EFL)))
+			stop("Link emission factors cannot include NA values.")	
+		if(any(is.na(UM)))
+			stop("Wind speeds cannot include NA values. See ?read.ISC for more.")
+		if(any(is.na(BRGM)) || any(BRGM < 0) || any(BRGM > 360))
+			stop("Wind bearings must be between 0 and 360 degrees, and cannot include NA values. See ?read.ISC for more.")
+		if(any(is.na(CLASM)))
+			stop("Stability classes must not include NA values. See ?read.ISC for more.")
+		if(any(CLASM > 6)) {
+			CLASM <- pmin(CLASM, 6)
+			warning("Rounding down stability class 7 to class 6.")
+		}
+		if(any(is.na(MIXHM)) || any(MIXHM < 0))
+			stop("Mixing heights must not be negative, and cannot include NA values.")
+	}
+	
 	# Convert type classifications to integers.
 	# (because you can't pass characters to .Fortran() with DUP = FALSE )
 	if(is.character(TYP)) {
@@ -200,42 +203,22 @@ CALINE3.predict <- function(
 		stop('TYP argument must be character or integer')
 	}
 	
-	# TODO: more rigorous type checking?
-	stopifnot(lapply(list(XR, YR, ZR), is.numeric) == TRUE)
-	stopifnot(lapply(list(XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL), is.numeric) == TRUE)
-	stopifnot(lapply(list(UM, BRGM, CLASM, MIXHM), is.numeric) == TRUE)
-	
-	stopifnot(all.equal(NL, length(YL1), length(XL2), length(YL2),
-		length(WL), length(HL), length(NTYP), length(VPHL), length(EFL)))
-		
-	# for(varname in c("NR", "XR", "YR", "ZR", "NL", "XL1", "YL1", "XL2", "YL2", "WL", "HL", "NTYP", "VPHL", "EFL", "NM", "UM", "BRGM", "CLASM", "MIXHM", "ATIM", "Z0", "VS", "VD")) {
-	# 		value <- get(varname)
-	# 		message(varname, " is ", value)
-	# 	}
-	
-	# Call native code, allocating array C to hold results
-	array.shape <- c(NR, NM)
-	returned_data <- .Fortran(
-	 	"CALINE3_MATRIX_SINGLE", 
-	 	NR, XR, YR, ZR,
-	 	NL, XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL,
-	 	NM, UM, BRGM, CLASM, MIXHM,
-	 	ATIM, Z0, VS, VD,
-	 	C = as.single(array(-1, dim=array.shape)),
-	 	PACKAGE = "Rcaline"
-	)
-	
-	# Reshape results, substituting NA for missing values
-	predicted <- matrix(
-		with(returned_data, replace(C, which(C < 0), NA)),
-		ncol = NM, 
-		nrow = NR)
-
-	# Label with appropriate units.
-	# NOTE: CALINE3 defaults to reporting values in 'ppm CO'.
-	#       Rcaline:::libcaline3.f does not multiply by FPPM, so values are in ug / m3.
-	attr(predicted, 'units') <- 'ug/m3'
-	
-	return(predicted)
+	# For each set of meteorological conditions:
+	#   Compute contributions from each link to each receptor under these conditions.
+	#   Sum these contributions and store as a column in the receptor x condition matrix.
+	require(CALINE3)
+	totals <- array(NA, dim=c(NR,NM))
+	stop('foo')
+	for(i in 1:NM) {
+		contributions <- CALINE3.array(
+			XR, YR, ZR,
+			XL1, YL1, XL2, YL2, WL, HL, NTYP, VPHL, EFL,
+			U[i], BRG[i], CLAS[i], MIXH[i],
+			ATIM, Z0, VS, VD
+		)
+		totals[,i] <- rowSums(contributions)
+	}
+	attr(totals, 'units') <- 'ug/m3'
+	return(totals)
 	
 }

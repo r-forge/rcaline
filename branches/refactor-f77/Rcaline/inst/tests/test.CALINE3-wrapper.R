@@ -1,6 +1,6 @@
 require(Rcaline)
 require(testthat)
-context("CALINE3-examples")
+context("CALINE3-wrapper")
 
 args <- list(
       XR=30.0, YR=0.0, ZR=1.8,
