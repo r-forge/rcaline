@@ -1,12 +1,12 @@
 Package: CALINE3
 Type: Package
-Title: What the package does (short line)
+Title: R interface to Fortran 77 implementation of CALINE3
 Version: 1.0
 Date: 2012-01-22
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Author: David Holstius
+Maintainer: David Holstius <david.holstius@berkeley.edu>
+Description: Used by Rcaline
+License: file LICENSE
 Collate:
     'CALINE3-package.R'
     'libcaline3.R'

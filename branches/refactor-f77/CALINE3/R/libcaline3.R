@@ -6,22 +6,24 @@
 #' 
 #' @param XR x-coordinates of the receptors
 #' @param YR y-coordinates of the receptors
-#' @param ZR z-coordinates of the receptors (above ground level)
+#' @param ZR z-coordinates of the receptors (height above ground level, usually 1.8m)
 #' @param XL1 starting x-coordinates of the links
 #' @param YL1 starting y-coordinates of the links
 #' @param XL2 ending x-coordinates of the links
 #' @param YL2 ending y-coordinates of the links
 #' @param WL widths of the links
 #' @param HL heights of the links (above ground level)
-#' @param NTYP link classifications
+#' @param NTYP link classifications (1=at grade, 2=bridge, 3=fill, 4=depressed)
 #' @param VPHL link-level traffic volumes, in vehicles per hour
-#' @param EFL link-level emission factors, in grams per vehicle-mile [per hour]
-#' @param U wind speeds, in meters per second (<1.0 results in NA)
+#' @param EFL link-level emission factors, in grams per vehicle-mile per hour
+#' @param U wind speeds, in meters per second (not less than 1.0)
 #' @param BRG wind bearings, in degrees (direction wind is blowing from)
 #' @param CLAS stability classes (1, 2, 3, 4, 5, or 6)
-#' @param MIXH mixing heights
-#' @param ATIM averaging time, in minutes
+#' @param MIXH mixing heights, in meters (over 1000 skips mixing height calculations)
+#' @param ATIM averaging time, in minutes (usually 60)
 #' @param Z0 surface roughness, in centimeters
+#' @param VS settling velocity, in cm/sec
+#' @param VD deposition velocity, in cm/sec
 #' @param .coerce force arguments to be cast to correct type
 #' 
 #' @return matrix of concentrations, in ug/m3

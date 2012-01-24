@@ -11,8 +11,8 @@
 
   \item{YR}{y-coordinates of the receptors}
 
-  \item{ZR}{z-coordinates of the receptors (above ground
-  level)}
+  \item{ZR}{z-coordinates of the receptors (height above
+  ground level, usually 1.8m)}
 
   \item{XL1}{starting x-coordinates of the links}
 
@@ -26,27 +26,36 @@
 
   \item{HL}{heights of the links (above ground level)}
 
-  \item{NTYP}{link classifications}
+  \item{NTYP}{link classifications (1=at grade, 2=bridge,
+  3=fill, 4=depressed)}
 
   \item{VPHL}{link-level traffic volumes, in vehicles per
   hour}
 
   \item{EFL}{link-level emission factors, in grams per
-  vehicle-mile [per hour]}
+  vehicle-mile per hour}
 
-  \item{U}{wind speeds, in meters per second (<1.0 results
-  in NA)}
+  \item{U}{wind speeds, in meters per second (not less than
+  1.0)}
 
   \item{BRG}{wind bearings, in degrees (direction wind is
   blowing from)}
 
   \item{CLAS}{stability classes (1, 2, 3, 4, 5, or 6)}
 
-  \item{MIXH}{mixing heights}
+  \item{MIXH}{mixing heights, in meters (over 1000 skips
+  mixing height calculations)}
 
-  \item{ATIM}{averaging time, in minutes}
+  \item{ATIM}{averaging time, in minutes (usually 60)}
 
   \item{Z0}{surface roughness, in centimeters}
+
+  \item{VS}{settling velocity, in cm/sec}
+
+  \item{VD}{deposition velocity, in cm/sec}
+
+  \item{.coerce}{force arguments to be cast to correct
+  type}
 }
 \value{
   matrix of concentrations, in ug/m3

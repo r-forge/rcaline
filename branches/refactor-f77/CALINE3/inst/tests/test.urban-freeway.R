@@ -117,7 +117,7 @@ test_that('case 4', {
 	)
 })
 
-warning('
+message('
 For the urban freeway cases:
   Some concentrations differ by <0.1 ppm CO compared to CALINE3 User Guide.
   Not sure if this is data input error, compiler differences, or something else.
