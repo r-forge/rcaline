@@ -1,7 +1,6 @@
 export(aggregate.HourlyConcentrations)
 export(as.AggregatedConcentrations.SpatialPointsDataFrame)
 export(as.data.frame.FreeFlowLinks)
-export(CALINE3)
 export(Caline3Model)
 export(centerlines.FreeFlowLinks)
 export(centerlines)

@@ -4,11 +4,10 @@
 \alias{Rcaline-package}
 \title{Rcaline}
 \description{
-  Rcaline provides an interface to Fortran implementations
-  of the CALINE model family. These steady-state, Gaussian
-  dispersion models are used to predict aerosol
-  concentrations downwind from mobile emission sources such
-  as highway traffic.
+  Rcaline provides a useful interface to the CALINE model
+  family. These steady-state, Gaussian dispersion models
+  are used to predict aerosol concentrations downwind from
+  mobile emission sources such as highway traffic.
 }
 \author{
   David Holstius \email{david.holstius@berkeley.edu}

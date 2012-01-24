@@ -10,7 +10,8 @@
   \item{units}{one of 'ppm', 'ug/m3', or 'mg/m3'}
 }
 \value{
-  matrix of predicted values
+  matrix of predicted values at each receptor under each
+  meteorological condition
 }
 \description{
   predict.Caline3Model

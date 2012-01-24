@@ -1,8 +1,6 @@
-require(Rcaline)
+require(Rcaline)  # must install first with --no-data option
 require(testthat)
 context("CALINE3-examples")
-
-require(Rcaline)  # must install first with --no-data option
 
 .link <- function(ID, XL1, YL1, XL2, YL2) {
 	coords <- matrix(c(XL1, YL1, XL2, YL2), ncol=2, byrow=TRUE)

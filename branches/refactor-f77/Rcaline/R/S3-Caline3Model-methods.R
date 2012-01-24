@@ -3,7 +3,7 @@
 #' @param object a \code{\link{Caline3Model}} object
 #' @param units one of 'ppm', 'ug/m3', or 'mg/m3'
 #'
-#' @return matrix of predicted values
+#' @return matrix of predicted values at each receptor under each meteorological condition
 #'
 #' @keywords predict model
 #' @S3method predict Caline3Model
@@ -11,43 +11,39 @@
 #' @export
 predict.Caline3Model <- function(object, units='ppm') {
 	
-	stopifnot(inherits(object, 'Caline3Model'))
-	lnk <- links(object)
-	met <- meteorology(object)
-	rcp <- receptors(object)
-	ter <- terrain(object)
-	pol <- pollutant(object)
+	require(CALINE3)
 	
+	stopifnot(inherits(object, 'Caline3Model'))
+	model <- object
+	rcp <- receptors(model)
+	lnk <- links(model)
+	met <- meteorology(model)
+	ter <- terrain(model)
+	pol <- pollutant(model)
+	params <- list(
+		ATIM = as.single(60.0),
+		Z0 = as.single(ter$surfaceRoughness),
+		VS = as.single(pol$settlingVelocity),
+		VD = as.single(pol$depositionVelocity)
+	)
+		
+	# Initialize the full matrix
 	NR <- nrow(as.data.frame(rcp))
-	NM <- nrow(as.data.frame(met))
 	NL <- nrow(as.data.frame(lnk))
-	      
-      # Initialize the full matrix
-      pred <- matrix(NA, 
-		nrow = nrow(as.data.frame(rcp)), 
-		ncol = nrow(as.data.frame(met)), 
-		dimnames = list(rownames(rcp), rownames(met)))	
+	NM <- nrow(as.data.frame(met))
+    pred <- matrix(NA, nrow=NR, ncol=NM, dimnames=list(rownames(rcp), rownames(met)))	
 
 	# Compute only the conditions (columns) for which wind speed >= 1.0
 	non.calm <- with(met, which(windSpeed >= 1.0))
-	args <- c(
-		as.Fortran(rcp),
-            as.Fortran(lnk), 
-		as.Fortran(met[non.calm,]), 
-		list(
-			ATIM = as.single(60.0),
-			Z0 = as.single(ter$surfaceRoughness),
-			VS = as.single(pol$settlingVelocity),
-			VD = as.single(pol$depositionVelocity)))		
-	computed <- do.call("CALINE3", args)
+	for(i in 1:length(non.calm)) {
+		hour <- non.calm[i]
+		args <- c(as.Fortran(rcp), as.Fortran(lnk), as.Fortran(met[hour,]), params) 
+		contributions <- do.call("CALINE3.array", args)
+		pred[,hour] <- rowSums(contributions)
+	}
 
-	# Assign the computed estimates back to the matrix
-	stopifnot(nrow(computed) == nrow(pred))
-	stopifnot(ncol(computed) == length(non.calm))
-	pred[,non.calm] <- computed
-
-      # Convert values to user-specified units
-      if(units == 'ppm') {
+	# Convert values to user-specified units
+    if(units == 'ppm') {
 		pred <- pred * 0.0245 / pol$molecularWeight
 	} else if (units == 'mg/m3') {
 	      pred <- pred * 1.0e3
@@ -55,13 +51,10 @@ predict.Caline3Model <- function(object, units='ppm') {
 	      # Default is ug/m3
 	}
 
-      # Tag the result as an 'HourlyConcentrations' object
+    # Tag the result as an 'HourlyConcentrations' object,
+	# with the originating model, and with the user-specified units
 	class(pred) <- c('HourlyConcentrations', 'matrix')
-	
-	# Tag the result with the originating model
-	attr(pred, 'model') <- object
-	
-	# Tag the result with the user-specified units
+	attr(pred, 'model') <- model
 	attr(pred, 'units') <- units
 
 	return(pred)
